@@ -1,6 +1,6 @@
 "use client";
 
-import ImportButton from "@/src/components/ImportButton";
+import ImportButton from "@/src/components/shared/button/ImportButton";
 import ProductEditor from "@/src/components/ProductEditor";
 
 /* ---------- UI Parts (ภายในไฟล์นี้) ---------- */

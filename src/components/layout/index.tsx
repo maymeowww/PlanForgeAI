@@ -1,6 +1,6 @@
 // app/layout.tsx
 import "./globals.css";
-import Header from "@/src/layout/Header";
+import Header from "@/src/components/layout/Header";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

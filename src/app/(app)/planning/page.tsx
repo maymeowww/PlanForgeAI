@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import ImportButton from "@/src/components/ImportButton";
+import ImportButton from "@/src/components/shared/button/ImportButton";
 import OrderCard, { PendingOrder } from "@/src/components/planning/OrderCard";
 import ScheduleLane, { LaneItem } from "@/src/components/planning/ScheduleLane";
 import Badge from "@/src/components/planning/Badge";

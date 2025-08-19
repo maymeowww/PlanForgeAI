@@ -1,18 +1,11 @@
-// src/app/layout.tsx (หรือ layout ของโซนที่ต้องการ)
+// src/app/layout.tsx
 import "./globals.css";
-// import Sidebar from "@/src/components/Sidebar";
+import { ReactNode } from "react";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-slate-50">
-        <div className="flex">
-          {/* <Sidebar /> */}
-          <main className="flex-1 min-h-svh p-6 lg:p-8">
-            {children}
-          </main>
-        </div>
-      </body>
+      <body className="bg-slate-50">{children}</body>
     </html>
   );
 }
