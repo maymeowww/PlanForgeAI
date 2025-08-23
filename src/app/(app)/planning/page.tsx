@@ -1,277 +1,535 @@
 "use client";
+import Card from "@/src/components/shared/card/Card";
+import clsx from "clsx";
+import React, { useEffect, useMemo, useState } from "react";
+import SuggestionCard from "./components/SuggestionCard";
+import MaterialCard from "./components/MaterialCard";
+import CapacityCard from "./components/CapacityCard";
+import DropSlot from "./components/DropSlot";
 
-import { useState } from "react";
-import ImportButton from "@/src/components/shared/button/ImportButton";
-import OrderCard, { PendingOrder } from "@/src/components/planning/OrderCard";
-import ScheduleLane, { LaneItem } from "@/src/components/planning/ScheduleLane";
-import Badge from "@/src/components/planning/Badge";
+/** ---------- Types ---------- */
+type OrderItem = {
+  id: string;           // e.g. WO-2024-006
+  product: string;      // e.g. Product F
+  qty: number;          // e.g. 300
+  due: string;          // e.g. 2024-12-20
+  priority?: "high" | "normal";
+};
 
-/* ---------- การ์ด KPI ด้านบน ---------- */
-function StatCard({
-  icon,
-  title,
-  value,
-  subtitle,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-  subtitle?: string;
-}) {
-  return (
-    <div className="rounded-xl border bg-white px-5 py-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-gray-50">
-          <span className="text-lg">{icon}</span>
-        </div>
-        <div className="min-w-0">
-          <div className="text-sm text-gray-600">{title}</div>
-          <div className="text-2xl font-semibold leading-7">{value}</div>
-          {subtitle && <div className="text-xs text-primary mt-1">{subtitle}</div>}
-        </div>
-      </div>
-    </div>
-  );
-}
+type Slot = {
+  id: string;
+  label: string;        // e.g. "14:30 - 18:00"
+  kind?: "maintenance" | "info" | "open"; // visual only
+  orderId?: string;     // occupied by which order
+};
 
+type Line = "A" | "B" | "C";
+
+type ScheduleState = Record<Line, Slot[]>;
+
+/** ---------- Mock data ---------- */
+const initialOrders: OrderItem[] = [
+  { id: "WO-2024-006", product: "Product F", qty: 300, due: "2024-12-20", priority: "high" },
+  { id: "WO-2024-007", product: "Product G", qty: 450, due: "2024-12-22" },
+  { id: "WO-2024-008", product: "Product H", qty: 200, due: "2024-12-25" },
+  { id: "WO-2024-009", product: "Product A", qty: 600, due: "2024-12-28" },
+  { id: "WO-2024-010", product: "Product B", qty: 350, due: "2024-12-30" },
+];
+
+const initialSchedule: ScheduleState = {
+  A: [
+    {
+      id: "A-current",
+      label: "Current",
+      kind: "info",
+      orderId: undefined, // แสดงสถานะปัจจุบัน (mock ข้อความใน UI)
+    },
+    { id: "A-next", label: "14:30 - 18:00", kind: "open" },
+    { id: "A-maint", label: "Preventive • 30 min (16:30-17:00)", kind: "maintenance" },
+    { id: "A-after", label: "17:00 - 20:00", kind: "open" },
+  ],
+  B: [
+    { id: "B-current", label: "Current (behind -2 hrs)", kind: "info" },
+    { id: "B-next", label: "16:00 - 20:00", kind: "open" },
+    { id: "B-evening", label: "20:00 - 24:00", kind: "open" },
+  ],
+  C: [
+    { id: "C-repair", label: "Issue: Material Jam (Downtime 12m)", kind: "maintenance" },
+    { id: "C-after", label: "After repair - 18:00", kind: "open" },
+    { id: "C-evening", label: "18:00 - 22:00", kind: "open" },
+  ],
+};
+
+// mock compatibility: ปรับตามจริงได้
+const compatible: Record<Line, string[]> = {
+  A: ["Product A", "Product F", "Product G", "Product B"],
+  B: ["Product F", "Product B", "Product H"],
+  C: ["Product A", "Product H"],
+};
+
+/** ---------- Component ---------- */
 export default function PlanningPage() {
-  /* ---------- Pending Orders (ซ้าย) ---------- */
-  const [orders, setOrders] = useState<PendingOrder[]>([
-    { id: "WO-2024-006", product: "Product F", qty: 300, due: "Dec 20", note: "High Priority" },
-    { id: "WO-2024-007", product: "Product G", qty: 450, due: "Dec 22" },
-    { id: "WO-2024-008", product: "Product H", qty: 200, due: "Dec 25" },
-    { id: "WO-2024-009", product: "Product A", qty: 600, due: "Dec 28" },
-    { id: "WO-2024-010", product: "Product B", qty: 350, due: "Dec 30" },
-  ]);
+  const [orders, setOrders] = useState<OrderItem[]>(initialOrders);
+  const [schedule, setSchedule] = useState<ScheduleState>(initialSchedule);
+  const [dragOrderId, setDragOrderId] = useState<string | null>(null);
 
-  /* ---------- Lanes (ขวา) ---------- */
-  const [laneA, setLaneA] = useState<LaneItem[]>([
-    { type: "current", title: "Current: WO-2024-001", product: "Product A", progress: "750/1000 pcs", meta: "Est. Complete: 14:30" },
-    { type: "maintenance", title: "Maintenance", meta: "Preventive • 30 min\n16:30–17:00" },
-  ]);
-  const [laneB, setLaneB] = useState<LaneItem[]>([
-    { type: "current", title: "Current: WO-2024-002", product: "Product B", progress: "320/800 pcs", meta: "Behind schedule: -2 hrs" },
-  ]);
-  const [laneC, setLaneC] = useState<LaneItem[]>([
-    { type: "issue", title: "Issue: Material Jam", meta: "Downtime: 12 minutes\nTechnician dispatched" },
-  ]);
+  const [aiDraftVisible, setAiDraftVisible] = useState(false);
+  const [saveEnabled, setSaveEnabled] = useState(false);
 
-  const insertToSlots = (items: LaneItem[], item: LaneItem, slotIndex: number) => {
-    const arr = [...items];
-    arr.splice(Math.min(slotIndex + 1, arr.length), 0, item);
-    return arr;
+  const [hasShadow, setHasShadow] = useState(false); // เงา header เมื่อสกอลล์
+
+  // header shadow on scroll
+  useEffect(() => {
+    const onScroll = () => setHasShadow(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+
+  // header KPI mock
+  const kpis = [
+    { icon: "📋", label: "Active Plans", value: "12", sub: "3 lines running", color: "primary" },
+    { icon: "✅", label: "Plan Efficiency", value: "94%", sub: "+2% vs target", color: "success" },
+    { icon: "⏰", label: "Pending Orders", value: String(orders.length), sub: "Need scheduling", color: "warning" },
+    { icon: "🎯", label: "AI Suggestions", value: "5", sub: "Optimization ready", color: "primary" }, // 'ai' → 'primary'
+  ] as const;
+
+
+  /** ---------- Actions ---------- */
+  const onAIGenerate = () => {
+    // เปิดแถบ AI Draft; ในโปรดักชัน: call API แล้ว set draft data
+    setAiDraftVisible(true);
   };
 
-  const handleDropToLane = (lane: "A" | "B" | "C", orderId: string, slotIndex: number) => {
-    const o = orders.find((x) => x.id === orderId);
-    if (!o) return;
+  const onApproveDraft = () => {
+    // ตัวอย่าง: เอา WO-2024-006 ไปลง B-next ถ้าเข้ากันได้
+    const draftPick = orders.find((o) => o.id === "WO-2024-006");
+    if (!draftPick) return;
 
-    const newItem: LaneItem = {
-      type: "order",
-      title: o.id,
-      product: o.product,
-      progress: `${o.qty} pcs`,
-      meta: `Dropped to slot ${slotIndex + 1}`,
+    if (compatible["B"].includes(draftPick.product)) {
+      setSchedule((prev) => ({
+        ...prev,
+        B: prev.B.map((s) => (s.id === "B-next" ? { ...s, orderId: draftPick.id } : s)),
+      }));
+      setOrders((prev) => prev.filter((o) => o.id !== draftPick.id));
+      setSaveEnabled(true);
+    }
+    setAiDraftVisible(false);
+  };
+
+  const onRejectDraft = () => {
+    setAiDraftVisible(false);
+  };
+
+  const onNewPlan = () => {
+    // ใส่ logic เปิด modal สร้างแผนใหม่
+    alert("Open Create Plan modal (stub)");
+  };
+
+  const onSavePlan = () => {
+    // ส่งข้อมูล schedule + orders ไป backend
+    alert("Plan saved!");
+    setSaveEnabled(false);
+  };
+
+  /** ---------- Drag & Drop ---------- */
+  const handleDragStart = (orderId: string) => setDragOrderId(orderId);
+  const handleDragEnd = () => setDragOrderId(null);
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault(); // allow drop
+  };
+
+  const handleDrop = (line: Line, slotId: string) => {
+    if (!dragOrderId) return;
+
+    const order = orders.find((o) => o.id === dragOrderId);
+    if (!order) return;
+
+    // compatibility check
+    if (!compatible[line].includes(order.product)) {
+      alert(`❌ ${order.product} ไม่ compatible กับ Line ${line}`);
+      return;
+    }
+
+    // block placing on maintenance/info
+    const slot = schedule[line].find((s) => s.id === slotId);
+    if (!slot || slot.kind === "maintenance" || slot.kind === "info") {
+      return;
+    }
+
+    // ถ้าช่องว่าง → วางได้
+    setSchedule((prev) => ({
+      ...prev,
+      [line]: prev[line].map((s) => (s.id === slotId ? { ...s, orderId: dragOrderId } : s)),
+    }));
+    // เอาออกจาก pending
+    setOrders((prev) => prev.filter((o) => o.id !== dragOrderId));
+    setSaveEnabled(true);
+    setDragOrderId(null);
+  };
+
+  /** ---------- Derived ---------- */
+  const utilization = useMemo(() => {
+    // mock: คิดจากจำนวนช่องที่ถูกใช้ (orderId) เทียบกับทั้งหมด (เฉพาะ kind=open)
+    const toPct = (line: Line) => {
+      const total = schedule[line].filter((s) => s.kind === "open").length;
+      const used = schedule[line].filter((s) => s.kind === "open" && s.orderId).length;
+      if (total === 0) return 0;
+      return Math.round((used / total) * 100);
     };
+    return {
+      A: toPct("A"),
+      B: toPct("B"),
+      C: toPct("C"),
+    };
+  }, [schedule]);
 
-    if (lane === "A") setLaneA((prev) => insertToSlots(prev, newItem, slotIndex));
-    if (lane === "B") setLaneB((prev) => insertToSlots(prev, newItem, slotIndex));
-    if (lane === "C") setLaneC((prev) => insertToSlots(prev, newItem, slotIndex));
-
-    setOrders((prev) => prev.filter((x) => x.id !== orderId));
-  };
-
-  const resetPending = () => {
-    setOrders([
-      { id: "WO-2024-006", product: "Product F", qty: 300, due: "Dec 20", note: "High Priority" },
-      { id: "WO-2024-007", product: "Product G", qty: 450, due: "Dec 22" },
-      { id: "WO-2024-008", product: "Product H", qty: 200, due: "Dec 25" },
-      { id: "WO-2024-009", product: "Product A", qty: 600, due: "Dec 28" },
-      { id: "WO-2024-010", product: "Product B", qty: 350, due: "Dec 30" },
-    ]);
-  };
-
-  /* ---------- ข้อมูลส่วนล่าง Capacity & Materials ---------- */
-  const capacity = [
-    { line: "Line A Utilization", planned: 8, available: 8, percent: 100, status: "Optimal", color: "text-emerald-600" },
-    { line: "Line B Utilization", planned: 6.5, available: 8, percent: 81, status: "Under-utilized", color: "text-amber-500" },
-    { line: "Line C Utilization", planned: 0, available: 8, percent: 0, status: "Stopped", color: "text-rose-500" },
-  ];
-
-  const materials = [
-    { name: "Raw Material A", required: "500 kg", available: "750 kg", note: "Sufficient", color: "text-emerald-600" },
-    { name: "Raw Material B", required: "300 kg", available: "320 kg", note: "Low stock", color: "text-amber-500" },
-    { name: "Packaging Material", required: "1000 units", available: "200 units", note: "Shortage", color: "text-rose-500" },
-  ];
-
-  const handleOptimizeCapacity = () => {
-    console.log("Optimize Capacity Allocation");
-  };
-  const handleGeneratePO = () => {
-    console.log("Generate Purchase Orders");
-  };
-
-  /* ---------- UI ---------- */
   return (
-    <main className="max-w-6xl mx-auto p-6 space-y-6">
-      {/* หัวหน้าเพจ + ปุ่ม + KPI */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">AI Production Planning</h1>
-        <div className="flex flex-wrap gap-2">
-          <ImportButton
-            label="Import CSV/Excel"
-            onFilesSelected={(files) => {
-              // TODO: parse ไฟล์แล้ว map ใส่ orders / lanes
-              console.log("planning import:", files[0]?.name);
-            }}
-          />
-          <button className="inline-flex items-center gap-2 rounded-lg bg-[#8b5cf6] px-4 py-2 text-white hover:opacity-90">
+    <div id="planning-page" className="min-h-screen bg-slate-50 text-slate-800">
+      {/* Header */}
+      <header
+        className={clsx(
+          "py-2 sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70",
+          hasShadow ? "shadow-sm" : "shadow-none"
+        )}
+      >
+        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold leading-tight">AI Production Planning</h1>
+          </div>
+
+          {/* Action Icons */}
+          <div className="flex items-center gap-2">
+           <button
+            onClick={onAIGenerate}
+            className="bg-ai text-white px-4 py-2 rounded-lg bg-purple-600  hover:bg-purple-700"
+          >
             🤖 AI Generate Plan
           </button>
-          <button className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-white hover:opacity-90">
+          <button
+            onClick={onNewPlan}
+            className="bg-primary text-white px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700"
+          >
             + New Plan
           </button>
-          <button className="inline-flex items-center gap-2 rounded-lg bg-[#10b981] px-4 py-2 text-white hover:opacity-90">
+          <button
+            onClick={onSavePlan}
+            disabled={!saveEnabled}
+            className={`bg-success text-white px-4 py-2 rounded-lg hover:bg-green-700 ${
+              saveEnabled ? "" : "opacity-50"
+            }`}
+          >
             Save Plan
           </button>
+          </div>
         </div>
-      </div>
+      </header>
+      
+      <div className="max-w-6xl mx-auto px-6 py-6">
+        {/* AI Draft Status */}
+        {aiDraftVisible && (
+          <div className="mb-6 rounded-lg border border-ai/20 bg-gradient-to-r from-ai/10 to-primary/10 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-lg bg-ai">
+                  <span className="text-sm text-white">🤖</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">AI Draft Plan Ready</h4>
+                  <p className="text-sm text-gray-600">
+                    AI generated an optimized plan based on due dates and machine compatibility.
+                  </p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={onApproveDraft}
+                  className="rounded-lg bg-success px-4 py-2 text-sm text-white hover:bg-green-700"
+                >
+                  ✅ Approve
+                </button>
+                <button
+                  onClick={onRejectDraft}
+                  className="rounded-lg bg-danger px-4 py-2 text-sm text-white hover:bg-red-700"
+                >
+                  ❌ Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={<span>📄</span>} title="Active Plans" value="12" subtitle="3 lines running" />
-        <StatCard icon={<span>✅</span>} title="Plan Efficiency" value="94%" subtitle="+2% vs target" />
-        <StatCard icon={<span>⏰</span>} title="Pending Orders" value={`${orders.length}`} subtitle="Need scheduling" />
-        <StatCard icon={<span>🎯</span>} title="AI Suggestions" value="5" subtitle="Optimization ready" />
-      </div>
+        {/* KPI Overview */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {kpis.map((kpi, i) => (
+            <Card
+              key={i}
+              icon={kpi.icon}
+              title={kpi.label}
+              value={kpi.value}
+              subtitle={kpi.sub}
+              accent={kpi.color === "ai" ? "primary" : kpi.color}
+            />
+          ))}
 
-      {/* คอนเทนต์หลัก 2 คอลัมน์ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* LEFT: Pending Orders */}
-        <section className="lg:col-span-4 flex flex-col">
-          <div className="rounded-xl border bg-white p-4 shadow-sm h-full flex flex-col">
-            <h2 className="text-lg font-semibold mb-3">Pending Orders</h2>
-            <div className="space-y-3">
-              {orders.map((o, idx) => (
-                <OrderCard key={o.id} order={o} active={idx === 0} />
-              ))}
+        </div>
+
+        {/* Pending Orders & Drag & Drop Schedule */}
+        <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Pending Orders */}
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-4 text-lg font-semibold text-gray-900">Pending Orders</h3>
+            <div className="space-y-3" id="pendingOrders">
+              {orders.map((o) => {
+                const isHigh = o.priority === "high";
+                return (
+                  <div
+                    key={o.id}
+                    draggable
+                    onDragStart={() => handleDragStart(o.id)}
+                    onDragEnd={handleDragEnd}
+                    className={`cursor-move rounded-lg border p-3 ${
+                      isHigh
+                        ? "border-warning/20 bg-warning/5"
+                        : "border-gray-200 bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-gray-900">{o.id}</div>
+                        <div className="text-sm text-gray-600">
+                          {o.product} • {o.qty} pcs
+                        </div>
+                        <div
+                          className={`text-xs ${
+                            isHigh ? "text-warning" : "text-gray-500"
+                          }`}
+                        >
+                          Due: {new Date(o.due).toLocaleDateString()}
+                          {isHigh && " (High Priority)"}
+                        </div>
+                      </div>
+                      <div className="text-gray-400">⋮⋮</div>
+                    </div>
+                  </div>
+                );
+              })}
               {orders.length === 0 && (
-                <div className="rounded-lg border p-4 text-center text-gray-500 bg-white">
-                  No pending orders — Good job! 🎉
+                <div className="rounded-lg border border-dashed border-gray-300 p-3 text-center text-sm text-gray-500">
+                  All orders scheduled ✅
                 </div>
               )}
             </div>
-            <div className="mt-4">
-              <button onClick={resetPending} className="text-sm text-gray-600 hover:text-gray-800 underline">
-                Reset demo
+          </div>
+
+          {/* Drag & Drop Production Schedule */}
+          <div className="lg:col-span-2 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Drag &amp; Drop Production Schedule
+              </h3>
+              <div className="flex space-x-2">
+                <button className="rounded bg-primary px-3 py-1 text-xs text-white">Today</button>
+                <button className="rounded bg-gray-200 px-3 py-1 text-xs text-gray-700 hover:bg-gray-300">
+                  Week
+                </button>
+                <button className="rounded bg-gray-200 px-3 py-1 text-xs text-gray-700 hover:bg-gray-300">
+                  Month
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-gray-600">
+              💡 <strong>How to use:</strong> Drag orders from <em>Pending Orders</em> and drop them
+              into the slots below. The system checks machine compatibility automatically.
+            </div>
+
+            {/* Lines */}
+            <div className="space-y-6">
+              {/* Line A */}
+              <div className="rounded-lg border border-gray-200 p-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-3 w-3 rounded-full bg-success"></div>
+                    <h4 className="font-semibold text-gray-900">Line A - Injection Molding</h4>
+                    <span className="rounded-full bg-success/10 px-2 py-1 text-xs text-success">
+                      Running
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Capacity: 150 pcs/hr • Compatible: A, F, G, B
+                  </div>
+                </div>
+                <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+                  {schedule.A.map((s) => (
+                    <DropSlot
+                      key={s.id}
+                      line="A"
+                      slot={s}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Line B */}
+              <div className="rounded-lg border border-gray-200 p-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-3 w-3 rounded-full bg-warning"></div>
+                    <h4 className="font-semibold text-gray-900">Line B - Assembly</h4>
+                    <span className="rounded-full bg-warning/10 px-2 py-1 text-xs text-warning">
+                      Low Efficiency
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Capacity: 120 pcs/hr • Compatible: F, B, H
+                  </div>
+                </div>
+                <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                  {schedule.B.map((s) => (
+                    <DropSlot
+                      key={s.id}
+                      line="B"
+                      slot={s}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Line C */}
+              <div className="rounded-lg border border-gray-200 p-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-3 w-3 rounded-full bg-danger"></div>
+                    <h4 className="font-semibold text-gray-900">Line C - Packaging</h4>
+                    <span className="rounded-full bg-danger/10 px-2 py-1 text-xs text-danger">
+                      Stopped
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Capacity: 200 pcs/hr • Compatible: A, H
+                  </div>
+                </div>
+                <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                  {schedule.C.map((s) => (
+                    <DropSlot
+                      key={s.id}
+                      line="C"
+                      slot={s}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Planning Tools */}
+        <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Capacity Planning */}
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-4 text-lg font-semibold text-gray-900">Capacity Planning</h3>
+            <div className="space-y-4">
+              <CapacityCard
+                title="Line A Utilization"
+                detail="Open slots planned / available"
+                percent={utilization.A}
+                hint={utilization.A >= 90 ? "Optimal" : utilization.A >= 70 ? "Good" : "Under-utilized"}
+                color={utilization.A >= 90 ? "success" : "warning"}
+              />
+              <CapacityCard
+                title="Line B Utilization"
+                detail="Open slots planned / available"
+                percent={utilization.B}
+                hint={utilization.B >= 90 ? "Optimal" : utilization.B >= 70 ? "Good" : "Under-utilized"}
+                color={utilization.B >= 90 ? "success" : "warning"}
+              />
+              <CapacityCard
+                title="Line C Utilization"
+                detail="Open slots planned / available"
+                percent={utilization.C}
+                hint={utilization.C === 0 ? "Stopped" : "Check"}
+                color={utilization.C === 0 ? "danger" : "warning"}
+              />
+
+              <button className="flex w-full items-center justify-center rounded-lg bg-ai px-4 py-2 bg-purple-600 text-white hover:bg-purple-700">
+                <span className="mr-2">🤖</span>
+                Optimize Capacity Allocation
               </button>
             </div>
           </div>
-        </section>
 
-        {/* RIGHT: Schedule Board */}
-        <section className="lg:col-span-8">
-          <div className="rounded-xl border bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold">Drag &amp; Drop Production Schedule</h2>
-              <div className="flex gap-2">
-                <button className="rounded-md border px-3 py-1 text-xs bg-primary/10 text-primary">Today</button>
-                <button className="rounded-md border px-3 py-1 text-xs">Week</button>
-                <button className="rounded-md border px-3 py-1 text-xs">Month</button>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-100 text-[13px] text-blue-700 rounded-md p-3 mb-4">
-              <span className="mr-2">💡</span>
-              <span className="font-medium">How to use:</span>{" "}
-              Drag orders from <span className="font-medium">“Pending Orders”</span> แล้ววางในช่องฝั่งขวา
-              ระบบจะเช็คความเข้ากันได้ให้อัตโนมัติ
-            </div>
-
-            <div className="space-y-5">
-              <ScheduleLane
-                title="Line A - Injection Molding"
-                rightMeta={<span className="text-xs text-gray-500">Capacity: 150 pcs/hr • Compatible: A, F, G, B</span>}
-                status={<Badge color="green" text="Running" />}
-                items={laneA}
-                slots={[{ label: "14:30 - 18:00" }, { label: "17:00 - 20:00" }]}
-                laneId="A"
-                onDropOrder={handleDropToLane}
+          {/* Material Requirements */}
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-4 text-lg font-semibold text-gray-900">Material Requirements</h3>
+            <div className="space-y-4">
+              <MaterialCard
+                name="Raw Material A"
+                required="500 kg"
+                available="750 kg"
+                status="Sufficient"
+                color="success"
               />
-              <ScheduleLane
-                title="Line B - Assembly"
-                rightMeta={<span className="text-xs text-gray-500">Capacity: 120 pcs/hr • Compatible: F, B, H</span>}
-                status={<Badge color="amber" text="Low Efficiency" />}
-                items={laneB}
-                slots={[{ label: "16:00 - 20:00" }, { label: "20:00 - 24:00" }]}
-                laneId="B"
-                onDropOrder={handleDropToLane}
+              <MaterialCard
+                name="Raw Material B"
+                required="300 kg"
+                available="320 kg"
+                status="Low stock"
+                color="warning"
               />
-              <ScheduleLane
-                title="Line C - Packaging"
-                rightMeta={<span className="text-xs text-gray-500">Capacity: 200 pcs/hr • Compatible: A, H</span>}
-                status={<Badge color="rose" text="Stopped" />}
-                items={laneC}
-                slots={[{ label: "After repair - 18:00" }, { label: "18:00 - 22:00" }]}
-                laneId="C"
-                onDropOrder={handleDropToLane}
+              <MaterialCard
+                name="Packaging Material"
+                required="1000 units"
+                available="200 units"
+                status="Shortage"
+                color="danger"
               />
+              <button className="w-full rounded-lg bg-warning px-4 py-2 text-white hover:bg-yellow-600">
+                Generate Purchase Orders
+              </button>
             </div>
           </div>
-        </section>
-      </div>
-
-      {/* SECTION: Capacity & Material (ใต้ Pending/DragDrop) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Capacity Planning */}
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <h3 className="text-lg font-semibold mb-3">Capacity Planning</h3>
-          <div className="space-y-3">
-            {capacity.map((c) => (
-              <div key={c.line} className="rounded-lg bg-gray-50/60 border border-gray-200 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-gray-800">{c.line}</div>
-                  <div className={`font-semibold ${c.color}`}>{c.percent}%</div>
-                </div>
-                <div className="text-sm text-gray-600">
-                  {c.planned} hours planned / {c.available} hours available
-                </div>
-                <div className="text-xs text-gray-400">{c.status}</div>
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={handleOptimizeCapacity}
-            className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#8b5cf6] px-4 py-2 text-white hover:opacity-90"
-          >
-            <span>🤖</span> Optimize Capacity Allocation
-          </button>
         </div>
 
-        {/* Material Requirements */}
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
-          <h3 className="text-lg font-semibold mb-3">Material Requirements</h3>
-          <div className="space-y-3">
-            {materials.map((m) => (
-              <div key={m.name} className="rounded-lg bg-gray-50/60 border border-gray-200 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-gray-800">{m.name}</div>
-                  <div className="text-right">
-                    <div className={`font-semibold ${m.color}`}>Available: {m.available}</div>
-                    <div className="text-[12px] text-gray-400">{m.note}</div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600">Required: {m.required}</div>
-              </div>
-            ))}
+        {/* AI Optimization Suggestions */}
+        <div className="rounded-lg border border-ai/20 bg-gradient-to-r from-ai/10 to-primary/10 p-6">
+          <div className="mb-4 flex items-center">
+            <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-lg bg-ai">
+              <span className="text-xl text-white">🤖</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">AI Optimization Suggestions</h3>
           </div>
-          <button
-            onClick={handleGeneratePO}
-            className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#f59e0b] px-4 py-2 text-white hover:opacity-90"
-          >
-            Generate Purchase Orders
-          </button>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <SuggestionCard
+              icon="💡"
+              color="success"
+              title="Schedule Optimization"
+              text="Move WO-003 to Line A after maintenance to reduce overall completion time by 2 hours."
+            />
+            <SuggestionCard
+              icon="⚡"
+              color="warning"
+              title="Efficiency Boost"
+              text="Reduce setup time on Line B by batching similar products. Potential 15% efficiency gain."
+            />
+            <SuggestionCard
+              icon="📊"
+              color="primary"
+              title="Resource Balancing"
+              text="Redistribute workload to balance line utilization and reduce bottlenecks."
+            />
+          </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

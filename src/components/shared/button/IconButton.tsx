@@ -3,70 +3,61 @@ import clsx from "clsx";
 
 type IconButtonProps = {
   children: React.ReactNode;
+  icon?: React.ReactNode;
   onClick?: () => void;
   variant?: "default" | "ok" | "warn";
+  label?: string;
   tooltip?: string;
   className?: string;
-  placement?: "top" | "bottom" | "left" | "right";
 };
 
 export default function IconButton({
   children,
+  icon,
   onClick,
   variant = "default",
+  label,
   tooltip,
   className = "",
-  placement = "top",
 }: IconButtonProps) {
   const [show, setShow] = useState(false);
 
-  // ตำแหน่ง tooltip
-  const tipPos =
-    placement === "top"
-      ? "bottom-full left-1/2 -translate-x-1/2 mb-1"
-      : placement === "bottom"
-      ? "top-full left-1/2 -translate-x-1/2 mt-1"
-      : placement === "left"
-      ? "right-full top-1/2 -translate-y-1/2 mr-1"
-      : "left-full top-1/2 -translate-y-1/2 ml-1";
+  const tipPos = "top-full left-1/2 -translate-x-1/2 mt-1";
 
   return (
     <div className={clsx("relative inline-block", className)}>
       <button
         type="button"
-        // className={clsx(
-        //   "iconbtn border border-slate-200", 
-        //   { 
-        //     ok: variant === "ok", 
-        //     warn: variant === "warn" 
-        //   }
-        // )}   
         className={clsx(
-            "iconbtn border rounded-md p-2 transition-colors",
-            {
-              "border-slate-200 hover:bg-slate-100": variant === "default",
-              "border-green-500 hover:bg-green-50 text-green-700": variant === "ok",
-              "border-red-500 hover:bg-red-50 text-red-700": variant === "warn",
-            }
-          )}     
+          "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors focus:outline-none",
+          {
+            "bg-blue-500 hover:bg-blue-600 text-white": variant === "ok",
+            "bg-red-500 hover:bg-red-600 text-white": variant === "warn",
+            "bg-gray-200 hover:bg-gray-300 text-gray-800": variant === "default",
+          }
+        )}
         onClick={onClick}
         onMouseEnter={() => setShow(true)}
         onMouseLeave={() => setShow(false)}
         onFocus={() => setShow(true)}
         onBlur={() => setShow(false)}
-        onTouchStart={() => setShow(true)}   // มือถือ
+        onTouchStart={() => setShow(true)}
         onTouchEnd={() => setShow(false)}
         aria-label={tooltip}
       >
-        {children}
+        {icon && <span className="flex items-center">{icon}</span>}
+        <span className="flex items-center whitespace-nowrap">
+          {children}
+          {label && <> {label}</>}
+        </span>
       </button>
 
       {tooltip && (
         <div
           className={clsx(
-            "absolute whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white transition-opacity duration-150 z-10 pointer-events-none",
+            "absolute whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white transition-all duration-150 z-50 pointer-events-none",
             tipPos,
-            show ? "opacity-100" : "opacity-0"
+            show ? "opacity-100 scale-100" : "opacity-0 scale-95"
           )}
         >
           {tooltip}

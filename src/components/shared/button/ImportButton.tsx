@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import clsx from 'clsx';
-import { Upload } from 'lucide-react';
+import { Download } from 'lucide-react';
 import IconButton from '@/src/components/shared/button/IconButton';
 
 type Props = {
@@ -38,7 +38,6 @@ export default function ImportButton({
       const extra = files.length > 1 ? ` +${files.length - 1}` : '';
       setFilename(first + extra);
       onFilesSelected?.(files);
-
       e.target.value = '';
     }
   };
@@ -46,7 +45,7 @@ export default function ImportButton({
   return (
     <div className={clsx('inline-flex items-center', className)}>
       <IconButton tooltip={label} onClick={openPicker} disabled={disabled}>
-        <Upload size={18} />
+        <Download size={18} />
       </IconButton>
 
       {showFilename && filename && (

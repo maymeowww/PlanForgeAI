@@ -4,6 +4,7 @@ import NextLink from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Settings, HelpCircle, LogOut } from "lucide-react";
 import { createPortal } from "react-dom";
+import { ChevronDown } from "lucide-react";
 
 type Props = { 
   user: {
@@ -101,35 +102,63 @@ export default function UserMenu({ user, compact = false }: Props) {
       <button
         ref={btnRef}
         type="button"
-        onClick={() => setOpen(v => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
+        onClick={() => {
+          setOpen(v => !v);
+          // ลบ focus ring ตอนเปิดเมนู เพื่อไม่ให้เห็น pill สีน้ำเงินค้างอยู่
+          requestAnimationFrame(() => btnRef.current?.blur());
+        }}
         className={[
-          "flex items-center transition-colors",
+          "group inline-flex items-center transition-all duration-150",
           compact
-            ? "p-0 rounded-full border-0 bg-transparent hover:bg-transparent focus:outline-none"
-            : "gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm hover:bg-slate-50 text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-100",
+            ? [
+                "h-9 w-9 rounded-full border border-slate-200 bg-white/90 shadow-sm",
+                !open && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60",
+              ].join(" ")
+            : [
+                "gap-3 rounded-full border border-slate-200 bg-white/90 pl-1.5 pr-2.5 py-3 px-3 shadow-sm",
+                "hover:bg-white",
+                !open && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60",
+              ].join(" "),
         ].join(" ")}
       >
-        {avatarSrc ? (
-          <img
-            src={avatarSrc}
-            alt={user.full_name || "User"}
-            className={compact ? "h-9 w-9 rounded-full object-cover" : "h-8 w-8 rounded-full object-cover"}
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <span className={["grid place-items-center rounded-full font-semibold",
-            compact ? "h-9 w-9 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
-                    : "h-8 w-8 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
-          ].join(" ")}>
-            {initials}
-          </span>
-        )}
+        {/* Avatar */}
+        <div
+          className={[
+            compact ? "h-9 w-9" : "h-8 w-8",
+            "grid place-items-center rounded-full bg-indigo-50 text-indigo-700 font-semibold",
+            "overflow-hidden shrink-0",
+          ].join(" ")}
+        >
+          {avatarSrc ? (
+            <img
+              src={avatarSrc}
+              alt={user.full_name || "User"}
+              className="h-full w-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <span className="text-xs">{initials}</span>
+          )}
+        </div>
+
+        {/* Name */}
         {!compact && (
-          <span className="hidden sm:block text-sm font-medium max-w-[140px] truncate">
+          <span className="max-w-[160px] truncate text-sm font-medium text-slate-800">
             {user.full_name || ""}
           </span>
+        )}
+
+        {/* Caret (หมุนตอน open) */}
+        {!compact && (
+          <ChevronDown
+            size={16}
+            className={[
+              "ml-0.5 text-slate-400 transition-transform duration-150 group-hover:text-slate-600",
+              open ? "rotate-180" : "rotate-0",
+            ].join(" ")}
+          />
         )}
       </button>
 
@@ -154,7 +183,7 @@ export default function UserMenu({ user, compact = false }: Props) {
                 {avatarSrc ? (
                   <img src={avatarSrc} alt="" className="h-9 w-9 rounded-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
-                  <span className="h-9 w-9 grid place-items-center rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold dark:bg-indigo-900/40 dark:text-indigo-300">
+                  <span className="h-9 w-9 grid place-items-center rounded-full bg-indigo-50 text-indigo-700 text-sm font-semibold dark:bg-indigo-900/40 dark:text-indigo-300">
                     {initials}
                   </span>
                 )}

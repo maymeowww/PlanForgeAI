@@ -1,18 +1,21 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Edit3, Trash2 } from "lucide-react";
 import ImportButton from "@/src/components/shared/button/ImportButton";
-import {
-  Plus,
-  Download,
-  FileDown,
-  Upload,
-  Edit3,
-  Trash2,
-  X,
-} from "lucide-react";
 import ExportButton from "@/src/components/shared/button/ExportButton";
 import IconButton from "@/src/components/shared/button/IconButton";
+import Segment from "@/src/components/shared/button/Segment";
+import Dropdown from "@/src/components/shared/input/Dropdown";
+import SearchInput from "@/src/components/shared/input/SearchInput";
+import clsx from "clsx";
+
+// ใช้ Table เดียว (ตัวที่คุณอัปโหลด)
+import Table from "@/src/components/shared/Table";
+
+import OrderModal from "@/src/app/(app)/master/components/OrderModal";
+import ProductModal from "@/src/app/(app)/master/components/ProductModal";
+import MachineModal from "@/src/app/(app)/master/components/MachineModal";
 
 /** ========= Types ========= */
 type Order = {
@@ -59,128 +62,19 @@ const nextNumericId = <T, K extends keyof T>(arr: T[], key: K): number => {
   const max = arr.reduce((m, x: any) => Math.max(m, Number(x?.[key] || 0)), 0);
   return (max || 0) + 1;
 };
+const paginate = <T,>(list: T[], page: number, pageSize: number) =>
+  list.slice((page - 1) * pageSize, page * pageSize);
 
-const css = `
-:root{
-  --bg:#f7f9fb;
-  --panel:#ffffff;
-  --text:#0f172a;
-  --muted:#64748b;
-  --accent:#0ea5e9;
-  --accent-ink:#0b4d6b;
-  --line:#e5e7eb;
-  --r:16px;
-  --sh:0 10px 30px -15px rgba(2,6,23,.15);
-}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 Inter,ui-sans-serif,system-ui,"Segoe UI",Roboto}
-a{color:inherit}
-.wrap{max-width:1280px;margin:0 auto;padding:20px}
-h1{margin:0 0 4px;font-weight:900}
-.sub{color:var(--muted);font-size:13px}
-.row{display:flex;gap:10px;align-items:center}
-.right{margin-left:auto}
-
-/* ======= Header (light, no border, shadow on scroll) ======= */
-.topbar{
-  position:sticky;top:0;z-index:40;
-  // background:rgba(255,255,255,.92);
-  -webkit-backdrop-filter:saturate(180%) blur(8px);
-  backdrop-filter:saturate(180%) blur(8px);
-  transition:box-shadow .2s ease;
-}
-.topbar.shadow{box-shadow:var(--sh)}
-.topbar-inner{max-width:1280px;margin:0 auto;padding:12px 20px;display:flex;gap:12px;align-items:center}
-
-/* ======= Controls ======= */
-
-.iconbtn{
-  width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;
-  border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:0 1px 0 rgba(0,0,0,.03);
-}
-.iconbtn:hover{background:#f8fafc}
-.iconbtn.ok{background:#10b981;border-color:#059669;color:#fff}
-.iconbtn.warn{background:#ef4444;border-color:#dc2626;color:#fff}
-
-/* ======= Tabs (Segment) ======= */
-.segment{
-  display:inline-flex;background:#f1f5f9;border:1px solid var(--line);border-radius:999px;overflow:hidden;
-}
-.segment button{
-  padding:8px 14px;border:none;background:transparent;color:#334155;cursor:pointer;font-weight:600;
-}
-.segment button.active{background:#0ea5e9;color:#fff}
-
-/* ======= Cards/Tables ======= */
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
-.tbl{width:100%;border-collapse:separate;border-spacing:0 8px}
-.tbl th{font-size:12px;color:var(--muted);text-align:left;font-weight:700}
-.tbl td{background:#fff;border:1px solid var(--line);padding:10px;vertical-align:top}
-.tbl tr td:first-child{border-radius:12px 0 0 12px}
-.tbl tr td:last-child{border-radius:0 12px 12px 0}
-.tbl tbody tr:hover td{background:#f9fafb}
-
-/* ======= Chips / Pills ======= */
-.pill{display:inline-flex;gap:6px;align-items:center;background:#eef2f7;border:1px solid var(--line);padding:4px 8px;border-radius:999px;margin:3px 6px 3px 0;font-size:12px}
-.pill .x{background:none;border:none;color:#64748b;cursor:pointer}
-.pill .x:hover{color:#0f172a}
-
-/* ======= Inputs ======= */
-input,select,textarea{
-  background:#fff;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px;font:inherit
-}
-input[type="search"]{min-width:260px}
-
-/* ======= Toolbar inside card ======= */
-.toolbar{position:sticky;top:-16px;z-index:10;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);
-  margin:-16px -16px 12px -16px; padding:12px 16px; border-bottom:1px solid var(--line); border-radius:16px 16px 0 0;
-}
-
-/* ======= Modal ======= */
-.modal{position:fixed;inset:0;background:rgba(2,6,23,.3);display:flex;align-items:center;justify-content:center;padding:16px}
-.modal.hidden{display:none}
-.modal .box{background:#fff;border:1px solid var(--line);border-radius:14px;min-width:380px;max-width:720px;width:100%;box-shadow:var(--sh)}
-.modal .head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
-.modal .body{padding:16px}
-.modal .foot{display:flex;gap:8px;justify-content:flex-end;padding:14px 16px;border-top:1px solid var(--line)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media (max-width:900px){.grid2{grid-template-columns:1fr}}
-`;
-
-/** ========= CSV helpers ========= */
-function csvToArray(text: string): any[] {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map((s) => s.trim());
-  return lines.slice(1).map((line) => {
-    const cols = line.split(",");
-    const o: Record<string, any> = {};
-    headers.forEach((h, i) => {
-      let v = (cols[i] || "").trim();
-      if (v.includes("|")) v = v.split("|");
-      o[h] = v;
-    });
-    if ("order_id" in o) o.order_id = Number(o.order_id || 0) || null;
-    if ("id" in o) o.id = Number(o.id || 0) || null;
-    if ("std_rate_min" in o) o.std_rate_min = Number(o.std_rate_min || 0) || 0;
-    return o;
-  });
-}
-
-function downloadBlob(filename: string, blob: Blob) {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-/** ========= Component ========= */
 const MasterDataPage: React.FC = () => {
-  type Tab = "orders" | "products" | "machines";
-  const [tab, setTab] = useState<Tab>("orders");
+  const segmentOptions = [
+    { label: "orders", value: "orders" },
+    { label: "products", value: "products" },
+    { label: "machines", value: "machines" },
+  ] as const;
+  type ViewMode = typeof segmentOptions[number]["value"];
+  const [tab, setTab] = useState<ViewMode>("orders");
 
-  // shadow header on scroll
+  // header shadow
   const [hasShadow, setHasShadow] = useState(false);
   useEffect(() => {
     const onScroll = () => setHasShadow(window.scrollY > 4);
@@ -207,6 +101,13 @@ const MasterDataPage: React.FC = () => {
   const [orderStatus, setOrderStatus] = useState<"" | Order["status"]>("");
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [editOrderId, setEditOrderId] = useState<number | null>(null);
+  const orderStatusOptions: { label: string; value: "" | Order["status"] }[] = [
+    { label: "ทุกสถานะ", value: "" },
+    { label: "pending", value: "pending" },
+    { label: "released", value: "released" },
+    { label: "completed", value: "completed" },
+    { label: "cancelled", value: "cancelled" },
+  ];
 
   /** ====== Products UI state ====== */
   const [prodQ, setProdQ] = useState("");
@@ -217,12 +118,11 @@ const MasterDataPage: React.FC = () => {
   const [macQ, setMacQ] = useState("");
   const [macModalOpen, setMacModalOpen] = useState(false);
   const [editMacId, setEditMacId] = useState<string | null>(null);
-  const [capList, setCapList] = useState<string[]>([]);
 
   /** ====== Import file input ====== */
   const fileRef = useRef<HTMLInputElement>(null);
 
-  /** ====== Filtered views ====== */
+  /** ====== Filters ====== */
   const filteredOrders = useMemo(() => {
     const q = orderQ.trim().toLowerCase();
     return orders.filter((o) => {
@@ -266,11 +166,7 @@ const MasterDataPage: React.FC = () => {
       setMoStatus((o?.status as Order["status"]) || "pending");
       setMoRemarks(o?.remarks || "");
     } else {
-      setMoNumber("");
-      setMoCust("");
-      setMoDue(null);
-      setMoStatus("pending");
-      setMoRemarks("");
+      setMoNumber(""); setMoCust(""); setMoDue(null); setMoStatus("pending"); setMoRemarks("");
     }
     setOrderModalOpen(true);
   };
@@ -299,230 +195,235 @@ const MasterDataPage: React.FC = () => {
     setOrders((prev) => prev.filter((x) => x.order_id !== id));
   };
 
-  /** ====== Products modal data ====== */
-  const [mpCode, setMpCode] = useState("");
-  const [mpName, setMpName] = useState("");
-  const [mpCat, setMpCat] = useState("");
-  const [mpUnit, setMpUnit] = useState("pcs");
-  const [mpStd, setMpStd] = useState<number>(0);
-  const [mpImg, setMpImg] = useState("");
-  const [mpDesc, setMpDesc] = useState("");
-
+  /** ===== Products modal handlers ===== */
   const openProductModal = (id: number | null = null) => {
     setEditProdId(id);
     if (id) {
       const p = products.find((x) => x.id === id);
-      setMpCode(p?.product_number || "");
-      setMpName(p?.name || "");
-      setMpCat(p?.category || "");
-      setMpUnit(p?.unit_code || "pcs");
-      setMpStd(p?.std_rate_min ?? 0);
-      setMpImg(p?.image_url || "");
-      setMpDesc(p?.description || "");
-    } else {
-      setMpCode(""); setMpName(""); setMpCat(""); setMpUnit("pcs"); setMpStd(0); setMpImg(""); setMpDesc("");
+      // set states ถ้าคุณใช้ภายใน ProductModal ก็ไม่ต้องเซ็ตละเอียดที่นี่
     }
     setProdModalOpen(true);
   };
-
-  const saveProduct = () => {
-    const code = mpCode.trim();
-    const name = mpName.trim();
-    if (!code || !name) return alert("Product Number และ Name ห้ามว่าง");
-    const obj: Omit<Product, "id"> = {
-      product_number: code,
-      name,
-      category: mpCat.trim(),
-      unit_code: mpUnit.trim(),
-      std_rate_min: Number(mpStd) || 0,
-      image_url: mpImg.trim(),
-      description: mpDesc.trim(),
-    };
-    if (editProdId) {
-      setProducts((prev) => prev.map((p) => (p.id === editProdId ? { ...p, ...obj } : p)));
-    } else {
-      const id = nextNumericId(products, "id");
-      setProducts((prev) => [...prev, { id, ...obj }]);
-    }
-    setProdModalOpen(false);
-  };
-
   const delProduct = (id: number) => {
     if (!confirm("ลบสินค้า?")) return;
     setProducts((prev) => prev.filter((x) => x.id !== id));
   };
 
-  /** ====== Machines modal data ====== */
-  const [mmId, setMmId] = useState("");
-  const [mmCode, setMmCode] = useState("");
-  const [mmName, setMmName] = useState("");
-  const [mmType, setMmType] = useState("");
-  const [mmStatus, setMmStatus] = useState<Machine["status"]>("active");
-  const [mmLoc, setMmLoc] = useState("");
-  const [mmStd, setMmStd] = useState<number>(0.3);
-  const [mmCapUnit, setMmCapUnit] = useState("pcs/hour");
-  const [mmIns, setMmIns] = useState<string | null>(null);
-  const [mmPur, setMmPur] = useState<string | null>(null);
-  const [mmLast, setMmLast] = useState<string | null>(null);
-  const [mmNotes, setMmNotes] = useState("");
-  const [mmDesc, setMmDesc] = useState("");
-
+  /** ===== Machines modal handlers ===== */
   const openMachineModal = (id: string | null = null) => {
     setEditMacId(id);
-    if (id) {
-      const m = machines.find((x) => x.machine_id === id);
-      setMmId(m?.machine_id || ""); setMmCode(m?.machine_code || ""); setMmName(m?.name || "");
-      setMmType(m?.type || ""); setMmStatus((m?.status as Machine["status"]) || "active");
-      setMmLoc(m?.location_id || ""); setMmStd(m?.std_rate_min ?? 0.3); setMmCapUnit(m?.capacity_unit || "");
-      setMmIns(m?.installation_date || null); setMmPur(m?.purchase_date || null); setMmLast(m?.last_maintenance_date || null);
-      setMmNotes(m?.notes || ""); setMmDesc(m?.description || ""); setCapList([...(m?.capabilities || [])]);
-    } else {
-      setMmId(""); setMmCode(""); setMmName(""); setMmType(""); setMmStatus("active"); setMmLoc("");
-      setMmStd(0.3); setMmCapUnit("pcs/hour"); setMmIns(null); setMmPur(null); setMmLast(null);
-      setMmNotes(""); setMmDesc(""); setCapList([]);
-    }
     setMacModalOpen(true);
   };
-
-  const capKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const v = (e.currentTarget.value || "").trim();
-      if (!v) return;
-      if (!capList.includes(v)) setCapList((prev) => [...prev, v]);
-      e.currentTarget.value = "";
-    }
-  };
-  const rmCap = (c: string) => setCapList((prev) => prev.filter((x) => x !== c));
-
-  const saveMachine = () => {
-    const machine_id = mmId.trim();
-    if (!machine_id) return alert("Machine ID ห้ามว่าง");
-    const obj: Machine = {
-      machine_id,
-      machine_code: mmCode.trim(),
-      name: mmName.trim(),
-      type: mmType.trim(),
-      status: mmStatus,
-      location_id: mmLoc.trim(),
-      std_rate_min: Number(mmStd) || 0,
-      capacity_unit: mmCapUnit.trim(),
-      installation_date: mmIns || null,
-      purchase_date: mmPur || null,
-      last_maintenance_date: mmLast || null,
-      notes: mmNotes.trim(),
-      description: mmDesc.trim(),
-      capabilities: [...capList],
-      updated_at: new Date().toISOString(),
-      created_at: editMacId ? undefined : new Date().toISOString(),
-    };
-    if (editMacId) {
-      setMachines((prev) => prev.map((m) => (m.machine_id === editMacId ? { ...m, ...obj, created_at: m.created_at } : m)));
-    } else {
-      setMachines((prev) => [...prev, obj]);
-    }
-    setMacModalOpen(false);
-  };
-
   const delMachine = (id: string) => {
     if (!confirm("ลบเครื่องจักร?")) return;
     setMachines((prev) => prev.filter((x) => x.machine_id !== id));
   };
 
-  /** ====== Export / Import ====== */
-  const exportCurrent = (fmt: "json" | "csv") => {
-    const map = {
-      orders: {
-        data: orders,
-        fields: ["order_id", "order_number", "customer_id", "due_date", "remarks", "status"],
-      },
-      products: {
-        data: products,
-        fields: ["id", "product_number", "name", "category", "description", "unit_code", "std_rate_min", "image_url"],
-      },
-      machines: {
-        data: machines,
-        fields: [
-          "machine_id","machine_code","name","type","capabilities","status","location_id","description",
-          "installation_date","purchase_date","last_maintenance_date","std_rate_min","capacity_unit","notes","created_at","updated_at",
-        ],
-      },
-    } as const;
-    const { data, fields } = map[tab];
+  /** ===== Selected rows for modals ===== */
+  const selectedOrder = useMemo(() => {
+    const o = editOrderId ? orders.find((x) => x.order_id === editOrderId) : null;
+    return o
+      ? {
+          id: o.order_id ?? undefined,
+          order_number: o.order_number,
+          customer_id: o.customer_id,
+          due_date: o.due_date,
+          status: o.status,
+          remarks: o.remarks,
+        }
+      : null;
+  }, [editOrderId, orders]);
 
-    if (fmt === "json") {
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      downloadBlob(`${tab}.json`, blob);
-    } else {
-      const rows = [fields.join(",")].concat(
-        (data as any[]).map((obj) =>
-          fields.map((k) => {
-            let v = (obj as any)[k];
-            if (Array.isArray(v)) v = v.join("|");
-            if (v == null) v = "";
-            const s = String(v).replaceAll(",", ";");
-            return `"${s.replaceAll(`"`, `""`)}"`; // CSV-safe
-          }).join(",")
-        )
-      );
-      const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
-      downloadBlob(`${tab}.csv`, blob);
-    }
-  };
+  const selectedProduct = useMemo(() => {
+    return editProdId ? products.find((x) => x.id === editProdId) ?? null : null;
+  }, [editProdId, products]);
 
-  const onFileChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        let parsed: any = null;
-        const text = String(reader.result || "");
-        if (f.name.endsWith(".json")) parsed = JSON.parse(text);
-        else parsed = csvToArray(text);
-        if (!Array.isArray(parsed)) throw new Error("Invalid data");
-        const replace = true;
-        if (tab === "orders") setOrders(replace ? parsed : (prev) => [...prev, ...parsed]);
-        else if (tab === "products") setProducts(replace ? parsed : (prev) => [...prev, ...parsed]);
-        else setMachines(replace ? parsed : (prev) => [...prev, ...parsed]);
-        alert("Imported!");
-      } catch (err: any) {
-        alert("Import ไม่สำเร็จ: " + (err?.message || "unknown error"));
-      }
+  const selectedMachine = useMemo(() => {
+    return editMacId ? machines.find((x) => x.machine_id === editMacId) ?? null : null;
+  }, [editMacId, machines]);
+
+  /** ===== onSave handlers from modals ===== */
+  const handleSaveOrder = (m: {
+    id?: number;
+    order_number?: string;
+    customer_id?: string;
+    due_date?: string | null;
+    status?: string;
+    remarks?: string;
+  }) => {
+    const obj = {
+      order_number: m.order_number?.trim() || "",
+      customer_id: m.customer_id?.trim() || "",
+      due_date: m.due_date || null,
+      status: (m.status as Order["status"]) || "pending",
+      remarks: m.remarks?.trim() || "",
     };
-    reader.readAsText(f);
-    e.target.value = "";
+    if (!obj.order_number) return alert("Order Number ห้ามว่าง");
+
+    if (m.id) {
+      setOrders((prev) => prev.map((o) => (o.order_id === m.id ? { ...o, ...obj } : o)));
+    } else {
+      const id = nextNumericId(orders, "order_id");
+      setOrders((prev) => [...prev, { order_id: id, ...obj }]);
+    }
+    setOrderModalOpen(false);
+    setEditOrderId(null);
   };
 
-  /** ========= Render ========= */
+  const handleSaveProduct = (m: {
+    id?: number;
+    product_number?: string;
+    name?: string;
+    category?: string;
+    std_rate_min?: number;
+    unit_code?: string;
+    description?: string;
+    image_url?: string;
+  }) => {
+    const obj = {
+      product_number: (m.product_number || "").trim(),
+      name: (m.name || "").trim(),
+      category: (m.category || "").trim(),
+      unit_code: (m.unit_code || "pcs").trim(),
+      std_rate_min: Number(m.std_rate_min ?? 0) || 0,
+      image_url: (m.image_url || "").trim(),
+      description: (m.description || "").trim(),
+    };
+    if (!obj.product_number || !obj.name) return alert("Product Number และ Name ห้ามว่าง");
+
+    if (m.id) {
+      setProducts((prev) => prev.map((p) => (p.id === m.id ? { ...p, ...obj } : p)));
+    } else {
+      const id = nextNumericId(products, "id");
+      setProducts((prev) => [...prev, { id, ...obj } as Product]);
+    }
+    setProdModalOpen(false);
+    setEditProdId(null);
+  };
+
+  const handleSaveMachine = (
+    m: {
+      machine_id?: string;
+      machine_code?: string;
+      name?: string;
+      type?: string;
+      status?: string;
+      location_id?: string;
+      std_rate_min?: number;
+      capacity_unit?: string;
+      installation_date?: string | null;
+      purchase_date?: string | null;
+      last_maintenance?: string | null; // from modal
+      notes?: string;
+      description?: string;
+    },
+    capsFromModal: string[]
+  ) => {
+    const base = {
+      machine_id: (m.machine_id || "").trim(),
+      machine_code: (m.machine_code || "").trim(),
+      name: (m.name || "").trim(),
+      type: (m.type || "").trim(),
+      status: (m.status as Machine["status"]) || "active",
+      location_id: (m.location_id || "").trim(),
+      std_rate_min: Number(m.std_rate_min ?? 0) || 0,
+      capacity_unit: (m.capacity_unit || "").trim(),
+      installation_date: m.installation_date || null,
+      purchase_date: m.purchase_date || null,
+      last_maintenance_date: m.last_maintenance || null,
+      notes: (m.notes || "").trim(),
+      description: (m.description || "").trim(),
+      capabilities: [...capsFromModal],
+    };
+
+    if (!base.machine_id) return alert("Machine ID ห้ามว่าง");
+
+    const exists = editMacId && machines.some((x) => x.machine_id === editMacId);
+    if (exists) {
+      setMachines((prev) =>
+        prev.map((x) => (x.machine_id === editMacId ? { ...x, ...base, updated_at: new Date().toISOString() } : x))
+      );
+    } else {
+      setMachines((prev) => [
+        ...prev,
+        { ...base, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+      ]);
+    }
+    setMacModalOpen(false);
+    setEditMacId(null);
+  };
+
+  /** ========= Columns ========= */
+  const orderColumns = [
+    { label: "No.", key: "order_id", width: "80px" },
+    { label: "Order No.", key: "order_number", render: (o: any) => <b>{o.order_number}</b> },
+    { label: "Customer", key: "customer_id" },
+    { label: "Due", key: "due_date", render: (o: any) => o.due_date || "-" },
+    { label: "Status", key: "status" },
+    { label: "Remarks", key: "remarks", render: (o: any) => o.remarks || "-" },
+  ];
+
+  const productColumns = [
+    { label: "ID", key: "id" },
+    { label: "Code", key: "product_number", render: (p: any) => <b>{p.product_number}</b> },
+    { label: "Name", key: "name" },
+    { label: "Category", key: "category", render: (p: any) => p.category || "-" },
+    { label: "Std (min)", key: "std_rate_min", render: (p: any) => p.std_rate_min ?? "-" },
+    { label: "Unit", key: "unit_code", render: (p: any) => p.unit_code || "-" },
+    { label: "Description", key: "description", render: (p: any) => p.description || "-" },
+  ];
+
+  const machineColumns = [
+    { label: "ID", key: "machine_id" },
+    { label: "Code", key: "machine_code", render: (m: any) => <b>{m.machine_code}</b> },
+    { label: "Name", key: "name", render: (m: any) => m.name || "-" },
+    { label: "Type", key: "type", render: (m: any) => m.type || "-" },
+    { label: "Status", key: "status" },
+    { label: "Location", key: "location_id", render: (m: any) => m.location_id || "-" },
+    { label: "Std Rate", key: "std_rate_min", render: (m: any) => m.std_rate_min ?? "-" },
+    { label: "Unit", key: "capacity_unit", render: (m: any) => m.capacity_unit || "-" },
+  ];
+
+  /** ========= Pagination states (แยกต่อแท็บ) ========= */
+  const pageSize = 10;
+  const [pageOrders, setPageOrders] = useState(1);
+  const [pageProducts, setPageProducts] = useState(1);
+  const [pageMachines, setPageMachines] = useState(1);
+
+  // reset page เมื่อ filter เปลี่ยน
+  useEffect(() => { setPageOrders(1); }, [orderQ, orderStatus]);
+  useEffect(() => { setPageProducts(1); }, [prodQ]);
+  useEffect(() => { setPageMachines(1); }, [macQ]);
+
+  /** ========= Derived (add id + slice page) ========= */
+  const ordersWithId = useMemo(
+    () => filteredOrders.map(o => ({ ...o, id: o.order_id ?? undefined })),
+    [filteredOrders]
+  );
+  const productsWithId = useMemo(
+    () => filteredProducts.map(p => ({ ...p, id: p.id ?? undefined })),
+    [filteredProducts]
+  );
+  const machinesWithId = useMemo(
+    () => filteredMachines.map(m => ({ ...m, id: m.machine_id })), // ให้ id = machine_id (string)
+    [filteredMachines]
+  );
+
+  const pagedOrders = paginate(ordersWithId, pageOrders, pageSize);
+  const pagedProducts = paginate(productsWithId, pageProducts, pageSize);
+  const pagedMachines = paginate(machinesWithId, pageMachines, pageSize);
+
   return (
     <>
-      <style>{css}</style>
-
-      {/* Sticky top header */}
-      <div className={`topbar ${hasShadow ? "shadow" : ""}`}>
-        <div className="topbar-inner">
-          <div>
-            <h1 className="text-2xl font-bold">Master</h1>
-            <div className="sub">Orders • Products • Machines</div>
-          </div>
-
-          <div className="right row" style={{ gap: 8 }}>
-            {/* Tabs */}
-            <div className="segment" role="tablist" aria-label="Master tabs">
-              {(["orders","products","machines"] as const).map((t) => (
-                <button
-                  key={t}
-                  className={tab === t ? "active" : ""}
-                  onClick={() => setTab(t)}
-                  role="tab"
-                  aria-selected={tab === t}
-                >
-                  {t[0].toUpperCase() + t.slice(1)}
-                </button>
-              ))}
-            </div>
-
+      <header
+        className={clsx(
+          "py-2 sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 overflow-hidden",
+          hasShadow ? "shadow-sm" : "shadow-none"
+        )}
+      >
+        <div className="max-w-6xl mx-auto px-6 py-2 pb-1 flex items-center justify-between gap-3 min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold leading-tight">Master</h1>
+          <div className="flex items-center gap-2 min-w-0">
             <ImportButton
               label="Import CSV/Excel"
               onFilesSelected={(files) => {
@@ -531,297 +432,133 @@ const MasterDataPage: React.FC = () => {
             />
             <ExportButton
               label="Export JSON"
-              filename="users.json"
-              data={[]}     
-              type="json"   
+              filename="master.json"
+              data={{ orders, products, machines }}
+              type="json"
             />
-
           </div>
         </div>
-      </div>
 
-      <div className="wrap">
+        <div className="max-w-6xl mx-auto px-3 md:px-6 pb-2 overflow-x-auto">
+          <Segment<ViewMode> value={tab} onChange={setTab} options={segmentOptions} />
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto px-6 py-6">
         {/* ORDERS */}
-        <section className={`card ${tab !== "orders" ? "hidden" : ""}`} style={{ marginTop: 16 }}>
-          <div className="toolbar row" style={{ flexWrap: "wrap" as const, gap: 8 }}>
-            <input type="search" placeholder="ค้นหา order_number / customer_id / status" value={orderQ} onChange={(e) => setOrderQ(e.target.value)} />
-            <select value={orderStatus} onChange={(e) => setOrderStatus(e.target.value as Order["status"] | "")}>
-              <option value="">ทุกสถานะ</option>
-              <option>pending</option>
-              <option>released</option>
-              <option>completed</option>
-              <option>cancelled</option>
-            </select>
-            <div className="relative group inline-block right">
-              <IconButton variant="ok" tooltip="New Order" onClick={() => openOrderModal(null)}>              
-                <Plus size={18}/>
-              </IconButton>                  
+        <section className={`bg-white border rounded-2xl shadow-sm p-4 ${tab !== "orders" ? "hidden" : ""}`} style={{ marginTop: 16 }}>
+          <div className="flex flex-wrap gap-2 items-center mb-3">
+            <SearchInput
+              value={orderQ}
+              onChange={setOrderQ}
+              placeholder="ค้นหา order_number / customer_id / status"
+            />
+            <Dropdown
+              value={orderStatus}
+              onChange={(value) => setOrderStatus(value as "" | Order["status"])}
+              options={orderStatusOptions}
+            />
+            <div className="ml-auto">
+              <IconButton variant="ok" tooltip="New Order" onClick={() => openOrderModal(null)}>
+                <Plus size={18} />
+              </IconButton>
             </div>
           </div>
 
-          <div style={{ overflow: "auto" }}>
-            <table className="tbl">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Order No.</th>
-                  <th>Customer</th>
-                  <th>Due</th>
-                  <th>Status</th>
-                  <th>Remarks</th>
-                  <th style={{ width: 120 }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOrders.map((o) => (
-                  <tr key={o.order_id ?? Math.random()}>
-                    <td>{o.order_id}</td>
-                    <td><b>{o.order_number}</b></td>
-                    <td>{o.customer_id}</td>
-                    <td>{o.due_date || "-"}</td>
-                    <td>{o.status}</td>
-                    <td>{o.remarks || "-"}</td>
-                    <td className="row" style={{ gap: 6 }}>      
-                      <IconButton tooltip={"Edit"} onClick={() => openOrderModal(o.order_id!)}>
-                        <Edit3 size={16} />
-                      </IconButton>
-                      <IconButton variant="warn" tooltip={"Delete"} onClick={() => delOrder(o.order_id!)}>
-                        <Trash2 size={16} />
-                      </IconButton>
-
-                    </td>
-                  </tr>
-                ))}
-                {filteredOrders.length === 0 && (
-                  <tr><td colSpan={7} style={{ color: "#94a3b8" }}>ไม่พบข้อมูล</td></tr>
-                )}
-              </tbody>
-            </table>
+          <div className="overflow-auto">
+            <Table
+              columns={orderColumns}
+              data={pagedOrders}
+              currentPage={pageOrders}
+              pageSize={pageSize}
+              totalItems={ordersWithId.length}
+              onPageChange={setPageOrders}
+              openOrderModal={(id) => openOrderModal(Number(id))}
+              delOrder={(id) => delOrder(Number(id))}
+            />
           </div>
         </section>
 
         {/* PRODUCTS */}
-        <section className={`card ${tab !== "products" ? "hidden" : ""}`} style={{ marginTop: 16 }}>
-          <div className="toolbar row" style={{ flexWrap: "wrap" as const }}>
-            <input type="search" placeholder="ค้นหา product_number / ชื่อ / หมวดหมู่" value={prodQ} onChange={(e) => setProdQ(e.target.value)} />
-            <div className="right">
-              
-              <IconButton variant="ok" tooltip="New Product" onClick={() => openProductModal(null)}>              
-                <Plus size={18}/>
-              </IconButton>         
+        <section className={`bg-white border rounded-2xl shadow-sm p-4 ${tab !== "products" ? "hidden" : ""}`} style={{ marginTop: 16 }}>
+          <div className="flex flex-wrap gap-2 items-center mb-3">
+            <SearchInput
+              value={prodQ}
+              onChange={setProdQ}
+              placeholder="ค้นหา product_number / ชื่อ / หมวดหมู่"
+            />
+            <div className="ml-auto">
+              <IconButton variant="ok" tooltip="New Product" onClick={() => openProductModal(null)}>
+                <Plus size={18} />
+              </IconButton>
             </div>
           </div>
 
-          <div style={{ overflow: "auto" }}>
-            <table className="tbl">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Category</th>
-                  <th>Std (min)</th>
-                  <th>Unit</th>
-                  <th>Description</th>
-                  <th>Image</th>
-                  <th style={{ width: 120 }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map((p) => (
-                  <tr key={p.id ?? Math.random()}>
-                    <td>{p.id}</td>
-                    <td><b>{p.product_number}</b></td>
-                    <td>{p.name}</td>
-                    <td>{p.category || "-"}</td>
-                    <td>{p.std_rate_min ?? "-"}</td>
-                    <td>{p.unit_code || "-"}</td>
-                    <td>{p.description || "-"}</td>
-                    <td>{p.image_url ? <a href={p.image_url} target="_blank" rel="noreferrer">open</a> : "-"}</td>
-                    <td className="row" style={{ gap: 6 }}>         
-                      <IconButton tooltip={"Edit"} onClick={() => openProductModal(p.id!)}>
-                        <Edit3 size={16} />
-                      </IconButton>
-                      <IconButton variant="warn" tooltip={"Delete"} onClick={() => delProduct(p.id!)}>
-                        <Trash2 size={16} />
-                      </IconButton>
-                    </td>
-                  </tr>
-                ))}
-                {filteredProducts.length === 0 && (
-                  <tr><td colSpan={9} style={{ color: "#94a3b8" }}>ไม่พบข้อมูล</td></tr>
-                )}
-              </tbody>
-            </table>
+          <div className="overflow-auto">
+            <Table
+              columns={productColumns}
+              data={pagedProducts}
+              currentPage={pageProducts}
+              pageSize={pageSize}
+              totalItems={productsWithId.length}
+              onPageChange={setPageProducts}
+              openOrderModal={(id) => openProductModal(Number(id))}
+              delOrder={(id) => delProduct(Number(id))}
+            />
           </div>
         </section>
 
         {/* MACHINES */}
-        <section className={`card ${tab !== "machines" ? "hidden" : ""}`} style={{ marginTop: 16 }}>
-          <div className="toolbar row" style={{ flexWrap: "wrap" as const }}>
-            <input type="search" placeholder="ค้นหา machine_code / name / type / status" value={macQ} onChange={(e) => setMacQ(e.target.value)} />
-            <div className="right">
-              <IconButton variant="ok" tooltip="New Machine" onClick={() => openMachineModal(null)}>              
-                <Plus size={18}/>
-              </IconButton>   
+        <section className={`bg-white border rounded-2xl shadow-sm p-4 ${tab !== "machines" ? "hidden" : ""}`} style={{ marginTop: 16 }}>
+          <div className="flex flex-wrap gap-2 items-center mb-3">
+            <SearchInput
+              value={macQ}
+              onChange={setMacQ}
+              placeholder="ค้นหา machine_code / name / type / status"
+            />
+            <div className="ml-auto">
+              <IconButton variant="ok" tooltip="New Machine" onClick={() => openMachineModal(null)}>
+                <Plus size={18} />
+              </IconButton>
             </div>
           </div>
 
-          <div style={{ overflow: "auto" }}>
-            <table className="tbl">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Type</th>
-                  <th>Status</th>
-                  <th>Capabilities</th>
-                  <th>Location</th>
-                  <th>Std Rate</th>
-                  <th>Unit</th>
-                  <th style={{ width: 120 }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredMachines.map((m) => (
-                  <tr key={m.machine_id}>
-                    <td>{m.machine_id}</td>
-                    <td><b>{m.machine_code}</b></td>
-                    <td>{m.name || "-"}</td>
-                    <td>{m.type || "-"}</td>
-                    <td>{m.status}</td>
-                    <td>
-                      {(m.capabilities || []).map((c) => (
-                        <span className="pill" key={`${m.machine_id}-${c}`}>
-                          {c}
-                          <button className="x" onClick={() => rmCap(c)} title="remove">✕</button>
-                        </span>
-                      ))}
-                    </td>
-                    <td>{m.location_id || "-"}</td>
-                    <td>{m.std_rate_min ?? "-"}</td>
-                    <td>{m.capacity_unit || "-"}</td>
-                    <td className="row" style={{ gap: 6 }}>                  
-                      <IconButton tooltip={"Edit"} onClick={() => openMachineModal(m.machine_id)}>
-                        <Edit3 size={16} />
-                      </IconButton>
-                      <IconButton variant="warn" tooltip={"Delete"} onClick={() => delMachine(m.machine_id)}>
-                        <Trash2 size={16} />
-                      </IconButton>
-                    </td>
-                  </tr>
-                ))}
-                {filteredMachines.length === 0 && (
-                  <tr><td colSpan={10} style={{ color: "#94a3b8" }}>ไม่พบข้อมูล</td></tr>
-                )}
-              </tbody>
-            </table>
+          <div className="overflow-auto">
+            <Table
+              columns={machineColumns}
+              data={pagedMachines}
+              currentPage={pageMachines}
+              pageSize={pageSize}
+              totalItems={machinesWithId.length}
+              onPageChange={setPageMachines}
+              openOrderModal={(id) => openMachineModal(String(id))}
+              delOrder={(id) => delMachine(String(id))}
+            />
           </div>
         </section>
       </div>
 
       {/* ====== MODALS ====== */}
-      {/* Order Modal */}
-      <div className={`modal ${orderModalOpen ? "" : "hidden"}`} onClick={() => setOrderModalOpen(false)} role="dialog" aria-modal="true">
-        <div className="box" onClick={(e) => e.stopPropagation()}>
-          <div className="head">
-            <strong>{editOrderId ? "Edit Order" : "New Order"}</strong>
-            <button className="iconbtn" onClick={() => setOrderModalOpen(false)} aria-label="Close"><X size={16} /></button>
-          </div>
-          <div className="body">
-            <div className="grid2">
-              <label>Order Number<input value={moNumber} onChange={(e) => setMoNumber(e.target.value)} placeholder="ORD-1001" /></label>
-              <label>Customer ID<input value={moCust} onChange={(e) => setMoCust(e.target.value)} placeholder="CUST-001" /></label>
-              <label>Due Date<input type="date" value={moDue || ""} onChange={(e) => setMoDue(e.target.value || null)} /></label>
-              <label>Status
-                <select value={moStatus} onChange={(e) => setMoStatus(e.target.value as Order["status"])}>
-                  <option>pending</option><option>released</option><option>completed</option><option>cancelled</option>
-                </select>
-              </label>
-            </div>
-            <label>Remarks<textarea value={moRemarks} onChange={(e) => setMoRemarks(e.target.value)} placeholder="notes..." /></label>
-          </div>
-          <div className="foot">
-            <button className="btn ok" onClick={saveOrder}>Save</button>
-            <button className="btn ghost" onClick={() => setOrderModalOpen(false)}>Cancel</button>
-          </div>
-        </div>
-      </div>
-
-      {/* Product Modal */}
-      <div className={`modal ${prodModalOpen ? "" : "hidden"}`} onClick={() => setProdModalOpen(false)} role="dialog" aria-modal="true">
-        <div className="box" onClick={(e) => e.stopPropagation()}>
-          <div className="head">
-            <strong>{editProdId ? "Edit Product" : "New Product"}</strong>
-            <button className="iconbtn" onClick={() => setProdModalOpen(false)} aria-label="Close"><X size={16} /></button>
-          </div>
-          <div className="body">
-            <div className="grid2">
-              <label>Product Number<input value={mpCode} onChange={(e) => setMpCode(e.target.value)} placeholder="ELEC-001" /></label>
-              <label>Name<input value={mpName} onChange={(e) => setMpName(e.target.value)} placeholder="Product A" /></label>
-              <label>Category<input value={mpCat} onChange={(e) => setMpCat(e.target.value)} placeholder="Electronics" /></label>
-              <label>Unit<input value={mpUnit} onChange={(e) => setMpUnit(e.target.value)} placeholder="pcs" /></label>
-              <label>Std Rate (min)<input type="number" step="0.1" min={0} value={mpStd} onChange={(e) => setMpStd(Number(e.target.value))} /></label>
-              <label>Image URL<input value={mpImg} onChange={(e) => setMpImg(e.target.value)} placeholder="/static/images/products/product.png" /></label>
-            </div>
-            <label>Description<textarea value={mpDesc} onChange={(e) => setMpDesc(e.target.value)} placeholder="Description..." /></label>
-          </div>
-          <div className="foot">
-            <button className="btn ok" onClick={saveProduct}>Save</button>
-            <button className="btn ghost" onClick={() => setProdModalOpen(false)}>Cancel</button>
-          </div>
-        </div>
-      </div>
-
-      {/* Machine Modal */}
-      <div className={`modal ${macModalOpen ? "" : "hidden"}`} onClick={() => setMacModalOpen(false)} role="dialog" aria-modal="true">
-        <div className="box" onClick={(e) => e.stopPropagation()}>
-          <div className="head">
-            <strong>{editMacId ? "Edit Machine" : "New Machine"}</strong>
-            <button className="iconbtn" onClick={() => setMacModalOpen(false)} aria-label="Close"><X size={16} /></button>
-          </div>
-          <div className="body">
-            <div className="grid2">
-              <label>Machine ID<input value={mmId} onChange={(e) => setMmId(e.target.value)} placeholder="MCH-001" /></label>
-              <label>Machine Code<input value={mmCode} onChange={(e) => setMmCode(e.target.value)} placeholder="CNCL-3000-01" /></label>
-              <label>Name<input value={mmName} onChange={(e) => setMmName(e.target.value)} placeholder="CNC Lathe 3000" /></label>
-              <label>Type<input value={mmType} onChange={(e) => setMmType(e.target.value)} placeholder="CNC Lathe" /></label>
-              <label>Status
-                <select value={mmStatus} onChange={(e) => setMmStatus(e.target.value as Machine["status"])}>
-                  <option>active</option><option>down</option><option>standby</option>
-                </select>
-              </label>
-              <label>Location ID<input value={mmLoc} onChange={(e) => setMmLoc(e.target.value)} placeholder="LOC-001" /></label>
-              <label>Std Rate<input type="number" step="0.01" min={0} value={mmStd} onChange={(e) => setMmStd(Number(e.target.value))} /></label>
-              <label>Capacity Unit<input value={mmCapUnit} onChange={(e) => setMmCapUnit(e.target.value)} placeholder="pcs/hour" /></label>
-              <label>Installation Date<input type="date" value={mmIns || ""} onChange={(e) => setMmIns(e.target.value || null)} /></label>
-              <label>Purchase Date<input type="date" value={mmPur || ""} onChange={(e) => setMmPur(e.target.value || null)} /></label>
-              <label>Last Maintenance<input type="date" value={mmLast || ""} onChange={(e) => setMmLast(e.target.value || null)} /></label>
-            </div>
-
-            <label>Capabilities (พิมพ์แล้วกด Enter)</label>
-            <div style={{ margin: "6px 0" }}>
-              <div>
-                {capList.map((c) => (
-                  <span className="pill" key={c}>
-                    {c}
-                    <button className="x" onClick={() => rmCap(c)} title="remove">✕</button>
-                  </span>
-                ))}
-              </div>
-              <input placeholder="turning / cutting / drilling" onKeyDown={capKey} />
-            </div>
-
-            <label>Notes<textarea value={mmNotes} onChange={(e) => setMmNotes(e.target.value)} placeholder="Requires calibration every 6 months" /></label>
-            <label>Description<textarea value={mmDesc} onChange={(e) => setMmDesc(e.target.value)} placeholder="Machine description" /></label>
-          </div>
-          <div className="foot">
-            <button className="btn ok" onClick={saveMachine}>Save</button>
-            <button className="btn ghost" onClick={() => setMacModalOpen(false)}>Cancel</button>
-          </div>
-        </div>
-      </div>
+      <OrderModal
+        isOpen={orderModalOpen}
+        onClose={() => { setOrderModalOpen(false); setEditOrderId(null); }}
+        order={selectedOrder || undefined}
+        onSave={handleSaveOrder}
+      />
+      <ProductModal
+        isOpen={prodModalOpen}
+        onClose={() => { setProdModalOpen(false); setEditProdId(null); }}
+        product={selectedProduct || undefined}
+        onSave={handleSaveProduct}
+      />
+      <MachineModal
+        isOpen={macModalOpen}
+        onClose={() => { setMacModalOpen(false); setEditMacId(null); }}
+        machine={selectedMachine || undefined}
+        capabilities={selectedMachine?.capabilities || []}
+        onSave={handleSaveMachine}
+        onRemoveCapability={() => {}}
+      />
     </>
   );
 };

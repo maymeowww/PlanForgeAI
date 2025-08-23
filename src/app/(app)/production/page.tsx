@@ -2,34 +2,9 @@
 
 import ImportButton from "@/src/components/shared/button/ImportButton";
 import ProductEditor from "@/src/components/ProductEditor";
-
-/* ---------- UI Parts (ภายในไฟล์นี้) ---------- */
-function StatCard({
-  icon,
-  title,
-  value,
-  subtitle,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-  subtitle?: string;
-}) {
-  return (
-    <div className="rounded-xl border bg-white px-5 py-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-gray-50">
-          <span className="text-lg">{icon}</span>
-        </div>
-        <div className="min-w-0">
-          <div className="text-sm text-gray-600">{title}</div>
-          <div className="text-2xl font-semibold leading-7">{value}</div>
-          {subtitle && <div className="text-xs text-primary mt-1">{subtitle}</div>}
-        </div>
-      </div>
-    </div>
-  );
-}
+import Card from "@/src/components/shared/card/Card";
+import clsx from "clsx";
+import { useEffect, useState } from "react";
 
 function StatusBadge({
   color = "gray",
@@ -65,6 +40,16 @@ function ProgressBar({ value }: { value: number }) {
 
 /* ---------- หน้า Production ---------- */
 export default function ProductionPage() {
+  const [hasShadow, setHasShadow] = useState(false); // เงา header เมื่อสกอลล์
+
+  // header shadow on scroll
+  useEffect(() => {
+    const onScroll = () => setHasShadow(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   // ตัวอย่าง Work Orders
   const workOrders = [
     { id: "WO-2024-021", product: "Product A", qty: 1200, done: 750, line: "Line A", status: "Running" as const },
@@ -80,139 +65,203 @@ export default function ProductionPage() {
     { name: "Line C - Packaging", rate: 0, oee: 0, down: 100 },
   ];
 
+  const cardData = [
+    {
+      icon: "⚡",
+      title: "Production Rate",
+      value: "135",
+      subtitle: "pcs/hour (+8%)"
+    },
+    {
+      icon: "❌",
+      title: "NG Rate",
+      value: "3.2%",
+      subtitle: "+0.5% from yesterday"
+    },
+    {
+      icon: "⏱️",
+      title: "Downtime",
+      value: "45",
+      subtitle: "minutes today"
+    },
+    {
+      icon: "🎯",
+      title: "Target Achievement",
+      value: "92%",
+      subtitle: "1104/1200 pcs"
+    }
+  ];
+
+
   return (
-    <main className="max-w-6xl mx-auto p-6 space-y-6">
-      {/* Header + Import */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Production</h1>
-        <ImportButton
-          label="Import CSV/Excel"
-          onFilesSelected={(files) => {
-            // TODO: แปลงไฟล์แล้วอัปเดตตาราง/การ์ด
-            console.log("production import:", files[0]?.name);
-          }}
-        />
+    <div className="min-h-screen bg-slate-50 text-slate-800">
+    <header
+      className={clsx(
+        "sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 py-2",
+        hasShadow ? "shadow-sm" : "shadow-none"
+      )}
+    >
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 px-6 py-2 pb-1 min-w-0">
+        <h1 className="text-xl md:text-2xl font-bold leading-tight truncate">
+          Production
+        </h1>
+      
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={<span>⚡</span>} title="Production Rate" value="135" subtitle="pcs/hour (+8%)" />
-        <StatCard icon={<span>❌</span>} title="NG Rate" value="3.2%" subtitle="+0.5% from yesterday" />
-        <StatCard icon={<span>⏱️</span>} title="Downtime" value="45" subtitle="minutes today" />
-        <StatCard icon={<span>🎯</span>} title="Target Achievement" value="92%" subtitle="1104/1200 pcs" />
-      </div>
+    <div className="max-w-6xl mx-auto px-6 pb-3 overflow-x-auto">
+      <div className="flex items-center gap-3">
+        <div className="flex gap-3">
+          <button className="inline-flex items-center rounded-lg bg-purple-600 px-5 py-2 text-white hover:opacity-90 transition">
+            AI Generate Plan
+          </button>
+          <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-white hover:opacity-90 transition">
+            + New Plan
+          </button>
+          <button className="inline-flex items-center rounded-lg bg-green-600 px-5 py-2 text-white hover:opacity-90 transition">
+            Save Plan
+          </button>
+        </div>
 
-      {/* สองคอลัมน์หลัก */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* LEFT: Work Orders */}
-        <section className="lg:col-span-7">
-          <div className="rounded-xl border bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold">Work Orders</h2>
-              <div className="text-sm text-gray-500">{workOrders.length} orders</div>
-            </div>
-
-            <div className="overflow-hidden rounded-lg border">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
-                  <tr className="text-gray-600">
-                    <th className="px-4 py-2 text-left font-medium">WO</th>
-                    <th className="px-4 py-2 text-left font-medium">Product</th>
-                    <th className="px-4 py-2 text-right font-medium">Done / Plan</th>
-                    <th className="px-4 py-2 text-left font-medium">Line</th>
-                    <th className="px-4 py-2 text-left font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
-                  {workOrders.map((w) => {
-                    const pct = Math.round((w.done / w.qty) * 100);
-                    return (
-                      <tr key={w.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 font-medium text-gray-900">{w.id}</td>
-                        <td className="px-4 py-2 text-gray-700">{w.product}</td>
-                        <td className="px-4 py-2">
-                          <div className="flex items-center justify-end gap-2">
-                            <span className="text-gray-700 tabular-nums">{w.done}/{w.qty}</span>
-                            <div className="w-28"><ProgressBar value={pct} /></div>
-                            <span className="w-10 text-right tabular-nums text-gray-500">{pct}%</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-2 text-gray-700">{w.line}</td>
-                        <td className="px-4 py-2">
-                          {w.status === "Running" && <StatusBadge color="emerald">Running</StatusBadge>}
-                          {w.status === "Low Efficiency" && <StatusBadge color="amber">Low Efficiency</StatusBadge>}
-                          {w.status === "Stopped" && <StatusBadge color="rose">Stopped</StatusBadge>}
-                          {w.status === "Queued" && <StatusBadge color="sky">Queued</StatusBadge>}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        {/* RIGHT: Line Performance */}
-        <section className="lg:col-span-5">
-          <div className="rounded-xl border bg-white p-4 shadow-sm">
-            <h2 className="text-lg font-semibold mb-3">Line Performance</h2>
-
-            <div className="space-y-4">
-              {lines.map((l) => (
-                <div key={l.name} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                  <div className="mb-1 flex items-center justify-between">
-                    <div className="font-semibold text-gray-800">{l.name}</div>
-                    <StatusBadge color={l.rate > 80 ? "emerald" : l.rate > 0 ? "amber" : "rose"}>
-                      {l.rate > 80 ? "Optimal" : l.rate > 0 ? "Attention" : "Stopped"}
-                    </StatusBadge>
-                  </div>
-
-                  <div className="mt-2">
-                    <div className="text-xs text-gray-500 mb-1">Output Rate</div>
-                    <ProgressBar value={l.rate} />
-                    <div className="text-xs text-gray-500 mt-1">{l.rate}%</div>
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">OEE</div>
-                      <ProgressBar value={l.oee} />
-                      <div className="text-xs text-gray-500 mt-1">{l.oee}%</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Downtime</div>
-                      <ProgressBar value={l.down} />
-                      <div className="text-xs text-gray-500 mt-1">{l.down}%</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-          </div>
-        </section>
-      </div>
-
-      {/* Bottom Actions (optional) */}
-      <div className="rounded-xl border bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm text-gray-600">
-            Use Import to update work orders and line performance from your MES / CSV / Excel.
-          </div>
-          <div className="flex gap-2">
-            <button className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-50">
-              Export Report
-            </button>
-            <button className="rounded-lg bg-[#10b981] px-4 py-2 text-sm text-white hover:opacity-90">
-              Start Shift
-            </button>
-          </div>
+        <div className="ml-auto">
+          <ImportButton
+            label="Import CSV/Excel"
+            onFilesSelected={(files) => {
+              // TODO: parse ไฟล์แล้ว map ใส่ orders / lanes
+              console.log("planning import:", files[0]?.name);
+            }}
+          />
         </div>
       </div>
-      <ProductEditor>
-      
-      </ProductEditor>
-    </main>
+    </div>
+
+    </header>
+
+
+      <div className="max-w-6xl mx-auto px-6 py-6">
+        {/* KPIs */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {cardData.map((card, index) => (
+            <Card
+              key={index}
+              icon={<span>{card.icon}</span>}
+              title={card.title}
+              value={card.value}
+              subtitle={card.subtitle}
+            />
+          ))}
+        </div>
+
+        {/* สองคอลัมน์หลัก */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* LEFT: Work Orders */}
+          <section className="lg:col-span-7">
+            <div className="rounded-xl border bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold">Work Orders</h2>
+                <div className="text-sm text-gray-500">{workOrders.length} orders</div>
+              </div>
+
+              <div className="overflow-hidden rounded-lg border">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-gray-50">
+                    <tr className="text-gray-600">
+                      <th className="px-4 py-2 text-left font-medium">WO</th>
+                      <th className="px-4 py-2 text-left font-medium">Product</th>
+                      <th className="px-4 py-2 text-right font-medium">Done / Plan</th>
+                      <th className="px-4 py-2 text-left font-medium">Line</th>
+                      <th className="px-4 py-2 text-left font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 bg-white">
+                    {workOrders.map((w) => {
+                      const pct = Math.round((w.done / w.qty) * 100);
+                      return (
+                        <tr key={w.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 font-medium text-gray-900">{w.id}</td>
+                          <td className="px-4 py-2 text-gray-700">{w.product}</td>
+                          <td className="px-4 py-2">
+                            <div className="flex items-center justify-end gap-2">
+                              <span className="text-gray-700 tabular-nums">{w.done}/{w.qty}</span>
+                              <div className="w-28"><ProgressBar value={pct} /></div>
+                              <span className="w-10 text-right tabular-nums text-gray-500">{pct}%</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2 text-gray-700">{w.line}</td>
+                          <td className="px-4 py-2">
+                            {w.status === "Running" && <StatusBadge color="emerald">Running</StatusBadge>}
+                            {w.status === "Low Efficiency" && <StatusBadge color="amber">Low Efficiency</StatusBadge>}
+                            {w.status === "Stopped" && <StatusBadge color="rose">Stopped</StatusBadge>}
+                            {w.status === "Queued" && <StatusBadge color="sky">Queued</StatusBadge>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          {/* RIGHT: Line Performance */}
+          <section className="lg:col-span-5">
+            <div className="rounded-xl border bg-white p-4 shadow-sm">
+              <h2 className="text-lg font-semibold mb-3">Line Performance</h2>
+
+              <div className="space-y-4">
+                {lines.map((l) => (
+                  <div key={l.name} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <div className="mb-1 flex items-center justify-between">
+                      <div className="font-semibold text-gray-800">{l.name}</div>
+                      <StatusBadge color={l.rate > 80 ? "emerald" : l.rate > 0 ? "amber" : "rose"}>
+                        {l.rate > 80 ? "Optimal" : l.rate > 0 ? "Attention" : "Stopped"}
+                      </StatusBadge>
+                    </div>
+
+                    <div className="mt-2">
+                      <div className="text-xs text-gray-500 mb-1">Output Rate</div>
+                      <ProgressBar value={l.rate} />
+                      <div className="text-xs text-gray-500 mt-1">{l.rate}%</div>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">OEE</div>
+                        <ProgressBar value={l.oee} />
+                        <div className="text-xs text-gray-500 mt-1">{l.oee}%</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">Downtime</div>
+                        <ProgressBar value={l.down} />
+                        <div className="text-xs text-gray-500 mt-1">{l.down}%</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </section>
+        </div>
+
+        {/* Bottom Actions (optional) */}
+        <div className="rounded-xl border bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-gray-600">
+              Use Import to update work orders and line performance from your MES / CSV / Excel.
+            </div>
+            <div className="flex gap-2">
+              <button className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-50">
+                Export Report
+              </button>
+              <button className="rounded-lg bg-[#10b981] px-4 py-2 text-sm text-white hover:opacity-90">
+                Start Shift
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* <ProductEditor/> */}
+      </div>
+    </div>
   );
 }

@@ -8,6 +8,12 @@ import {
   Download,          // Export JSON (optional)
 } from "lucide-react";
 import clsx from "clsx";
+import IconButton from "@/src/components/shared/button/IconButton";
+import HolidayCard from "./components/HolidayCard";
+import ShiftBreakCard from "./components/ShiftBreakCard";
+import OTCard from "./components/OTCard";
+import ConstraintCard from "./components/ConstraintCard";
+import MaintenanceCard from "./components/MaintenanceCard";
 
 /* ---------- Types ---------- */
 type Holiday = { start_date: string; end_date: string; description: string; is_recurring: boolean };
@@ -131,12 +137,10 @@ export default function ProjectSettings() {
 
   const cell = "p-2 align-top";
   const th = "p-2 text-left text-xs font-semibold text-slate-500";
-  const iconBtn =
-    "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition shadow-sm";
+  const iconBtn = "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition shadow-sm";
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
-      {/* ======= Sticky Header (มีเงาเมื่อสกอลล์) ======= */}
       <header
         className={clsx(
           "py-2 sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70",
@@ -153,43 +157,19 @@ export default function ProjectSettings() {
 
           {/* Action Icons */}
           <div className="flex items-center gap-2">
-            {!isEditing ? (
-              <>
-                <button
-                  className={iconBtn}
-                  title="Edit"
-                  onClick={() => setIsEditing(true)}
-                  aria-label="Edit"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button
-                  className={iconBtn}
-                  title="Export JSON"
-                  onClick={() => downloadJSON("project_settings.json", payload)}
-                  aria-label="Export JSON"
-                >
-                  <Download className="h-4 w-4" />
-                </button>
-              </>
+            {!isEditing ? (              
+              <IconButton tooltip="Edit" onClick={() => setIsEditing(true)}>
+                <Pencil className="h-4 w-4"/>
+              </IconButton>
             ) : (
               <>
-                <button
-                  className={"inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"}
-                  title="Save"
-                  onClick={handleSave}
-                  aria-label="Save"
-                >
+                <IconButton tooltip="Save" onClick={handleSave} variant='ok'>                  
                   <Check className="h-4 w-4" />
-                </button>
-                <button
-                  className={"inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm"}
-                  title="Cancel"
-                  onClick={handleCancel}
-                  aria-label="Cancel"
-                >
+                </IconButton>        
+                
+                <IconButton tooltip="Cancel" onClick={handleCancel}>                  
                   <X className="h-4 w-4" />
-                </button>
+                </IconButton>        
               </>
             )}
           </div>
@@ -220,505 +200,47 @@ export default function ProjectSettings() {
 
       {/* ======= Content ======= */}
       <div className="max-w-6xl mx-auto px-6 py-6">
-        {/* TIP: ใช้ fieldset disabled เพื่อ “ล็อก” ทั้งบล็อกตอนยังไม่ Edit */}
-        {/* Calendar / Holidays */}
-        <section id="cal" className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Calendar / Holidays</h2>
-            <span className="text-xs rounded-full px-2 py-0.5 border bg-slate-50 text-slate-500">
-              {isEditing ? "Editing" : "Read-only"}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mb-3">
-            รองรับ “ช่วงวันหลายวัน” และ “Recurring รายปี”
-          </p>
 
-          <fieldset disabled={!isEditing} className={!isEditing ? "opacity-80 select-none" : ""}>
-            <div className="overflow-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className={th} style={{ width: 170 }}>Start</th>
-                    <th className={th} style={{ width: 170 }}>End</th>
-                    <th className={th}>Description</th>
-                    <th className={th} style={{ width: 120 }}>Recurring</th>
-                    <th className={th} style={{ width: 60 }} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {holidays.map((h, i) => (
-                    <tr key={i} className="align-top">
-                      <td className={cell}>
-                        <input
-                          type="date"
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          value={h.start_date}
-                          onChange={(e) =>
-                            setHolidays(holidays.map((x, j) => (j === i ? { ...x, start_date: e.target.value } : x)))
-                          }
-                        />
-                      </td>
-                      <td className={cell}>
-                        <input
-                          type="date"
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          value={h.end_date}
-                          onChange={(e) =>
-                            setHolidays(holidays.map((x, j) => (j === i ? { ...x, end_date: e.target.value } : x)))
-                          }
-                        />
-                      </td>
-                      <td className={cell}>
-                        <input
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          placeholder="Description"
-                          value={h.description}
-                          onChange={(e) =>
-                            setHolidays(holidays.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))
-                          }
-                        />
-                      </td>
-                      <td className={cell}>
-                        <select
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          value={String(h.is_recurring)}
-                          onChange={(e) =>
-                            setHolidays(
-                              holidays.map((x, j) => (j === i ? { ...x, is_recurring: toBool(e.target.value) } : x))
-                            )
-                          }
-                        >
-                          <option value="false">No</option>
-                          <option value="true">Yes</option>
-                        </select>
-                      </td>
-                      <td className={cell}>
-                        <button
-                          className="text-rose-600 hover:underline disabled:opacity-50"
-                          onClick={() => setHolidays(holidays.filter((_, j) => j !== i))}
-                          title="remove"
-                          disabled={!isEditing}
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <HolidayCard
+          holidays={holidays}
+          setHolidays={setHolidays}
+          isEditing={isEditing}
+        />
 
-            <div className="mt-2">
-              <button
-                className="px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-sm disabled:opacity-50"
-                onClick={() =>
-                  setHolidays([...holidays, { start_date: "", end_date: "", description: "", is_recurring: false }])
-                }
-                disabled={!isEditing}
-              >
-                + Add Holiday
-              </button>
-            </div>
-          </fieldset>
-        </section>
-
-        {/* Shifts & Breaks */}
-        <section id="shifts" className="scroll-mt-35 bg-white border rounded-2xl shadow-sm p-4 mt-4">
-          <h2 className="text-lg font-semibold">Shifts & Breaks</h2>
-          <p className="text-xs text-slate-500 mb-3">นิยามกะทำงานและช่วงพัก</p>
-
-          <fieldset disabled={!isEditing} className={!isEditing ? "opacity-80 select-none" : ""}>
-            <h3 className="text-sm font-semibold text-slate-700">Shifts</h3>
-            <div className="overflow-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className={th} style={{ width: 140 }}>Shift Code</th>
-                    <th className={th} style={{ width: 180 }}>Start</th>
-                    <th className={th} style={{ width: 180 }}>End</th>
-                    <th className={th}>Lines (optional)</th>
-                    <th className={th} style={{ width: 80 }} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {shifts.map((s, i) => (
-                    <tr key={i}>
-                      <td className={cell}>
-                        <input
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          placeholder="A"
-                          value={s.code}
-                          onChange={(e) => setShifts(shifts.map((x, j) => (j === i ? { ...x, code: e.target.value } : x)))}
-                        />
-                      </td>
-                      <td className={cell}>
-                        <input
-                          type="time"
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          value={s.start}
-                          onChange={(e) => setShifts(shifts.map((x, j) => (j === i ? { ...x, start: e.target.value } : x)))}
-                        />
-                      </td>
-                      <td className={cell}>
-                        <input
-                          type="time"
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          value={s.end}
-                          onChange={(e) => setShifts(shifts.map((x, j) => (j === i ? { ...x, end: e.target.value } : x)))}
-                        />
-                      </td>
-                      <td className={cell}>
-                        <input
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          placeholder="Assembly,Packing"
-                          value={s.lines.join(",")}
-                          onChange={(e) =>
-                            setShifts(
-                              shifts.map((x, j) =>
-                                j === i ? { ...x, lines: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) } : x
-                              )
-                            )
-                          }
-                        />
-                      </td>
-                      <td className={cell}>
-                        <button
-                          className="text-rose-600 hover:underline disabled:opacity-50"
-                          onClick={() => setShifts(shifts.filter((_, j) => j !== i))}
-                          disabled={!isEditing}
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-2 flex items-center gap-2">
-              <button
-                className="px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-sm disabled:opacity-50"
-                onClick={() => setShifts([...shifts, { code: "", start: "08:00", end: "17:00", lines: [] }])}
-                disabled={!isEditing}
-              >
-                + Add Shift
-              </button>
-            </div>
-
-            <h3 className="text-sm font-semibold text-slate-700 mt-4">Breaks</h3>
-            <div className="overflow-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className={th} style={{ width: 140 }}>Shift Code</th>
-                    <th className={th} style={{ width: 180 }}>Break Start</th>
-                    <th className={th} style={{ width: 180 }}>Break End</th>
-                    <th className={th} style={{ width: 80 }} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {breaks.map((b, i) => (
-                    <tr key={i}>
-                      <td className={cell}>
-                        <input
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          placeholder="A"
-                          value={b.shift_code}
-                          onChange={(e) => setBreaks(breaks.map((x, j) => (j === i ? { ...x, shift_code: e.target.value } : x)))}
-                        />
-                      </td>
-                      <td className={cell}>
-                        <input
-                          type="time"
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          value={b.start}
-                          onChange={(e) => setBreaks(breaks.map((x, j) => (j === i ? { ...x, start: e.target.value } : x)))}
-                        />
-                      </td>
-                      <td className={cell}>
-                        <input
-                          type="time"
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          value={b.end}
-                          onChange={(e) => setBreaks(breaks.map((x, j) => (j === i ? { ...x, end: e.target.value } : x)))}
-                        />
-                      </td>
-                      <td className={cell}>
-                        <button
-                          className="text-rose-600 hover:underline disabled:opacity-50"
-                          onClick={() => setBreaks(breaks.filter((_, j) => j !== i))}
-                          disabled={!isEditing}
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-2">
-              <button
-                className="px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-sm disabled:opacity-50"
-                onClick={() => setBreaks([...breaks, { shift_code: "", start: "12:00", end: "13:00" }])}
-                disabled={!isEditing}
-              >
-                + Add Break
-              </button>
-            </div>
-          </fieldset>
-        </section>
+        <ShiftBreakCard
+          shifts={shifts}
+          setShifts={setShifts}
+          breaks={breaks}
+          setBreaks={setBreaks}
+          isEditing={isEditing}
+        />
 
         {/* OT / Setup / Buffer */}
-        <section id="ot" className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4 mt-4">
-          <h2 className="text-lg font-semibold">OT Rules / Setup Time / Buffer</h2>
-          <p className="text-xs text-slate-500 mb-3">กำหนดกฎ OT และค่าเริ่มต้น</p>
-
-          <fieldset disabled={!isEditing} className={!isEditing ? "opacity-80 select-none" : ""}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <label className="flex items-center gap-3">
-                <span className="w-48 text-sm">OT Daily Cap (hours)</span>
-                <input
-                  type="number" min={0} step={0.5}
-                  className="rounded-md border border-slate-300 px-2 py-1 w-32"
-                  value={otRules.daily_cap_hours}
-                  onChange={(e) => setOTRules({ ...otRules, daily_cap_hours: Number(e.target.value) || 0 })}
-                />
-              </label>
-
-              <label className="flex items-center gap-3">
-                <span className="w-48 text-sm">Allow Weekend OT</span>
-                <select
-                  className="rounded-md border border-slate-300 px-2 py-1 w-40"
-                  value={String(otRules.allow_weekend_ot)}
-                  onChange={(e) => setOTRules({ ...otRules, allow_weekend_ot: toBool(e.target.value) })}
-                >
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </label>
-
-              <label className="flex items-center gap-3">
-                <span className="w-48 text-sm">Default Setup (min)</span>
-                <input
-                  type="number" min={0} step={1}
-                  className="rounded-md border border-slate-300 px-2 py-1 w-32"
-                  value={otRules.default_setup_min}
-                  onChange={(e) => setOTRules({ ...otRules, default_setup_min: Number(e.target.value) || 0 })}
-                />
-              </label>
-
-              <label className="flex items-center gap-3">
-                <span className="w-48 text-sm">Default Buffer before Due (min)</span>
-                <input
-                  type="number" min={0} step={5}
-                  className="rounded-md border border-slate-300 px-2 py-1 w-32"
-                  value={otRules.default_buffer_min}
-                  onChange={(e) => setOTRules({ ...otRules, default_buffer_min: Number(e.target.value) || 0 })}
-                />
-              </label>
-            </div>
-
-            <hr className="my-4" />
-
-            <h3 className="text-sm font-semibold text-slate-700">Setup Matrix (product → product)</h3>
-            <div className="overflow-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className={th} style={{ width: 170 }}>From Product</th>
-                    <th className={th} style={{ width: 170 }}>To Product</th>
-                    <th className={th} style={{ width: 160 }}>Setup (min)</th>
-                    <th className={th} style={{ width: 80 }} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {setupMatrix.map((r, i) => (
-                    <tr key={i}>
-                      <td className={cell}>
-                        <input
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          placeholder="P1"
-                          value={r.from}
-                          onChange={(e) => setSetupMatrix(setupMatrix.map((x, j) => (j === i ? { ...x, from: e.target.value } : x)))}
-                        />
-                      </td>
-                      <td className={cell}>
-                        <input
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          placeholder="P2"
-                          value={r.to}
-                          onChange={(e) => setSetupMatrix(setupMatrix.map((x, j) => (j === i ? { ...x, to: e.target.value } : x)))}
-                        />
-                      </td>
-                      <td className={cell}>
-                        <input
-                          type="number" min={0} step={1}
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          value={r.setup_min}
-                          onChange={(e) =>
-                            setSetupMatrix(setupMatrix.map((x, j) => (j === i ? { ...x, setup_min: Number(e.target.value) || 0 } : x)))
-                          }
-                        />
-                      </td>
-                      <td className={cell}>
-                        <button
-                          className="text-rose-600 hover:underline disabled:opacity-50"
-                          onClick={() => setSetupMatrix(setupMatrix.filter((_, j) => j !== i))}
-                          disabled={!isEditing}
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-2">
-              <button
-                className="px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-sm disabled:opacity-50"
-                onClick={() => setSetupMatrix([...setupMatrix, { from: "", to: "", setup_min: 10 }])}
-                disabled={!isEditing}
-              >
-                + Add Rule
-              </button>
-            </div>
-          </fieldset>
-        </section>
+        <OTCard
+          otRules={otRules}
+          setOTRules={setOTRules}
+          setupMatrix={setupMatrix}
+          setSetupMatrix={setSetupMatrix}
+          isEditing={isEditing}
+          toBool={toBool}
+        />
 
         {/* Constraints */}
-        <section id="constraints" className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4 mt-4">
-          <h2 className="text-lg font-semibold">Constraints (Maintenance, Material Ready)</h2>
-          <fieldset disabled={!isEditing} className={!isEditing ? "opacity-80 select-none" : ""}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <label className="flex items-center gap-3">
-                <span className="w-56 text-sm">Enforce Maintenance Windows</span>
-                <select
-                  className="rounded-md border border-slate-300 px-2 py-1 w-40"
-                  value={String(constraints.enforce_maintenance)}
-                  onChange={(e) => setConstraints({ ...constraints, enforce_maintenance: toBool(e.target.value) })}
-                >
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </label>
-
-              <label className="flex items-center gap-3">
-                <span className="w-56 text-sm">Enforce Material Ready</span>
-                <select
-                  className="rounded-md border border-slate-300 px-2 py-1 w-40"
-                  value={String(constraints.enforce_material_ready)}
-                  onChange={(e) => setConstraints({ ...constraints, enforce_material_ready: toBool(e.target.value) })}
-                >
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </label>
-
-              <label className="flex items-center gap-3">
-                <span className="w-56 text-sm">Material Ready Offset (min)</span>
-                <input
-                  type="number" min={0} step={5}
-                  className="rounded-md border border-slate-300 px-2 py-1 w-32"
-                  value={constraints.material_ready_offset_min}
-                  onChange={(e) => setConstraints({ ...constraints, material_ready_offset_min: Number(e.target.value) || 0 })}
-                />
-              </label>
-
-              <label className="flex items-center gap-3">
-                <span className="w-56 text-sm">Freeze Window (min)</span>
-                <input
-                  type="number" min={0} step={5}
-                  className="rounded-md border border-slate-300 px-2 py-1 w-32"
-                  value={constraints.freeze_window_min}
-                  onChange={(e) => setConstraints({ ...constraints, freeze_window_min: Number(e.target.value) || 0 })}
-                />
-              </label>
-            </div>
-          </fieldset>
-        </section>
+        <ConstraintCard
+          constraints={constraints}
+          setConstraints={setConstraints}
+          isEditing={isEditing}
+          toBool={toBool}
+        />
 
         {/* Maintenance Windows */}
-        <section id="maint" className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4 mt-4">
-          <h2 className="text-lg font-semibold">Maintenance Windows</h2>
-          <fieldset disabled={!isEditing} className={!isEditing ? "opacity-80 select-none" : ""}>
-            <div className="overflow-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className={th} style={{ width: 120 }}>Machine ID</th>
-                    <th className={th} style={{ width: 220 }}>Start</th>
-                    <th className={th} style={{ width: 220 }}>End</th>
-                    <th className={th} style={{ width: 160 }}>Type</th>
-                    <th className={th}>Note</th>
-                    <th className={th} style={{ width: 80 }} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {maint.map((m, i) => (
-                    <tr key={i}>
-                      <td className={cell}>
-                        <input
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          placeholder="M1"
-                          value={m.machine_id}
-                          onChange={(e) => setMaint(maint.map((x, j) => (j === i ? { ...x, machine_id: e.target.value } : x)))}
-                        />
-                      </td>
-                      <td className={cell}>
-                        <input
-                          type="datetime-local"
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          value={m.start_dt}
-                          onChange={(e) => setMaint(maint.map((x, j) => (j === i ? { ...x, start_dt: e.target.value } : x)))}
-                        />
-                      </td>
-                      <td className={cell}>
-                        <input
-                          type="datetime-local"
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          value={m.end_dt}
-                          onChange={(e) => setMaint(maint.map((x, j) => (j === i ? { ...x, end_dt: e.target.value } : x)))}
-                        />
-                      </td>
-                      <td className={cell}>
-                        <select
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          value={m.type}
-                          onChange={(e) => setMaint(maint.map((x, j) => (j === i ? { ...x, type: e.target.value as MaintWin["type"] } : x)))}
-                        >
-                          <option value="PM">PM</option>
-                          <option value="Unplanned">Unplanned</option>
-                        </select>
-                      </td>
-                      <td className={cell}>
-                        <input
-                          className="w-full rounded-md border border-slate-300 px-2 py-1"
-                          placeholder="note"
-                          value={m.note}
-                          onChange={(e) => setMaint(maint.map((x, j) => (j === i ? { ...x, note: e.target.value } : x)))}
-                        />
-                      </td>
-                      <td className={cell}>
-                        <button
-                          className="text-rose-600 hover:underline disabled:opacity-50"
-                          onClick={() => setMaint(maint.filter((_, j) => j !== i))}
-                          disabled={!isEditing}
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </fieldset>
-        </section>
+        <MaintenanceCard
+          maint={maint}
+          setMaint={setMaint}
+          isEditing={isEditing}
+          th={th}
+          cell={cell}
+        />
       </div>
     </div>
   );

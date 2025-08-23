@@ -49,8 +49,7 @@
 .btn.ghost{background:#fff;border-color:var(--line);color:#334155}
 
 .iconbtn{
-  width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;
-  border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:0 1px 0 rgba(0,0,0,.03);
+  @apply inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition shadow-sm;
 }
 .iconbtn:hover{background:#f8fafc}
 .iconbtn.ok{background:#10b981;border-color:#059669;color:#fff}
