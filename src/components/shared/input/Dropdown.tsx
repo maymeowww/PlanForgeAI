@@ -36,7 +36,7 @@ function Dropdown<T extends string>({
   return (
     <div className={`${className}`}>
       {label && (
-        <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
@@ -46,7 +46,29 @@ function Dropdown<T extends string>({
         name={name}
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
-        className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30 disabled:opacity-50"
+        className="
+          block
+          min-w-[150px]
+          max-w-[300px]
+          rounded-md
+          border
+          px-3
+          py-2
+          text-sm
+          focus:outline-none
+          focus:ring-2
+
+          text-slate-900 placeholder:text-slate-400
+          bg-white border-slate-300
+          focus:border-sky-500 focus:ring-sky-500/30
+
+          dark:text-slate-100 dark:placeholder:text-slate-500
+          dark:bg-slate-900 dark:border-slate-700
+          dark:focus:border-sky-500 dark:focus:ring-sky-500/40
+
+          disabled:opacity-60 disabled:cursor-not-allowed
+          truncate
+        "
         disabled={disabled}
         required={required}
         aria-label={ariaLabel}

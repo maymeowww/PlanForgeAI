@@ -1,6 +1,5 @@
-import Dropdown from "@/src/components/shared/input/Dropdown";
-import { Trash2 } from "lucide-react";
 import React from "react";
+import { Trash2 } from "lucide-react";
 
 type Holiday = {
   start_date: string;
@@ -27,12 +26,7 @@ const HolidayCard: React.FC<HolidayCardProps> = ({
   const addEmptyRow = () => {
     setHolidays([
       ...holidays,
-      {
-        start_date: "",
-        end_date: "",
-        description: "",
-        is_recurring: false,
-      },
+      { start_date: "", end_date: "", description: "", is_recurring: false },
     ]);
   };
 
@@ -41,80 +35,133 @@ const HolidayCard: React.FC<HolidayCardProps> = ({
   };
 
   const updateRow = (index: number, updated: Partial<Holiday>) => {
-    setHolidays(
-      holidays.map((h, i) => (i === index ? { ...h, ...updated } : h))
-    );
+    setHolidays(holidays.map((h, i) => (i === index ? { ...h, ...updated } : h)));
   };
 
   return (
-    <section className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold">Calendar / Holidays</h2>
-        <span className="text-xs rounded-full px-2 py-0.5 border bg-slate-50 text-slate-500">
+    <section className="scroll-mt-24 rounded-2xl border p-4 shadow-sm
+                        bg-white border-slate-200
+                        dark:bg-slate-900 dark:border-slate-700">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Calendar / Holidays
+        </h2>
+        <span className="rounded-full border px-2 py-0.5 text-xs
+                         bg-slate-50 text-slate-600 border-slate-200
+                         dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
           {isEditing ? "Editing" : "Read-only"}
         </span>
       </div>
 
-      <fieldset disabled={!isEditing} className={!isEditing ? "opacity-80 select-none" : ""}>
-        <div className="overflow-auto rounded-md border border-slate-200">
-          <table className="w-full text-sm text-left border-collapse">
-            <thead className="bg-slate-100 text-slate-600 text-xs">
+      <fieldset
+        disabled={!isEditing}
+        className={!isEditing ? "select-none opacity-80" : ""}
+      >
+        <div className="overflow-auto rounded-md border
+                        border-slate-200 dark:border-slate-700">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead className="bg-slate-100 text-xs text-slate-700
+                               dark:bg-slate-800 dark:text-slate-300">
               <tr>
-                <th className="px-4 py-2 border-b border-slate-200 w-40">Start Date</th>
-                <th className="px-4 py-2 border-b border-slate-200 w-40">End Date</th>
-                <th className="px-4 py-2 border-b border-slate-200">Description</th>
-                <th className="px-4 py-2 border-b border-slate-200 w-32">Recurring</th>
-                {isEditing && <th className="px-4 py-2 border-b border-slate-200 w-10 text-center"></th>}
+                <th className="w-40 border-b px-4 py-2
+                               border-slate-200 dark:border-slate-700">
+                  Start Date
+                </th>
+                <th className="w-40 border-b px-4 py-2
+                               border-slate-200 dark:border-slate-700">
+                  End Date
+                </th>
+                <th className="border-b px-4 py-2
+                               border-slate-200 dark:border-slate-700">
+                  Description
+                </th>
+                <th className="w-32 border-b px-4 py-2
+                               border-slate-200 dark:border-slate-700">
+                  Recurring
+                </th>
+                {isEditing && (
+                  <th className="w-10 border-b px-4 py-2 text-center
+                                 border-slate-200 dark:border-slate-700"></th>
+                )}
               </tr>
             </thead>
+
             <tbody>
               {holidays.map((holiday, index) => (
                 <tr
                   key={index}
-                  className="even:bg-white odd:bg-slate-50 hover:bg-blue-50 transition"
+                  className="transition
+                             odd:bg-slate-50 even:bg-white hover:bg-blue-50
+                             dark:odd:bg-slate-800 dark:even:bg-slate-900 dark:hover:bg-slate-800/70"
                 >
-                  <td className="px-4 py-2 border-b border-slate-100">
+                  <td className="border-b px-4 py-2
+                                 border-slate-100 dark:border-slate-700">
                     <input
                       type="date"
                       value={holiday.start_date}
                       onChange={(e) => updateRow(index, { start_date: e.target.value })}
-                      className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      className="w-full rounded-md border px-2 py-1 text-sm
+                                 bg-white text-slate-900 border-slate-300
+                                 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500
+                                 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700
+                                 dark:focus:ring-sky-500/40 dark:focus:border-sky-500"
                     />
                   </td>
-                  <td className="px-4 py-2 border-b border-slate-100">
+
+                  <td className="border-b px-4 py-2
+                                 border-slate-100 dark:border-slate-700">
                     <input
                       type="date"
                       value={holiday.end_date}
                       onChange={(e) => updateRow(index, { end_date: e.target.value })}
-                      className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      className="w-full rounded-md border px-2 py-1 text-sm
+                                 bg-white text-slate-900 border-slate-300
+                                 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500
+                                 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700
+                                 dark:focus:ring-sky-500/40 dark:focus:border-sky-500"
                     />
                   </td>
-                  <td className="px-4 py-2 border-b border-slate-100">
+
+                  <td className="border-b px-4 py-2
+                                 border-slate-100 dark:border-slate-700">
                     <input
                       type="text"
                       value={holiday.description}
                       placeholder="Description"
                       onChange={(e) => updateRow(index, { description: e.target.value })}
-                      className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      className="w-full rounded-md border px-2 py-1 text-sm
+                                 bg-white text-slate-900 placeholder:text-slate-400 border-slate-300
+                                 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500
+                                 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:border-slate-700
+                                 dark:focus:ring-sky-500/40 dark:focus:border-sky-500"
                     />
                   </td>
-                  <td className="px-4 py-2 border-b border-slate-100">
+
+                  <td className="border-b px-4 py-2
+                                 border-slate-100 dark:border-slate-700">
                     <select
                       value={String(holiday.is_recurring)}
                       onChange={(e) =>
                         updateRow(index, { is_recurring: toBool(e.target.value) })
                       }
-                      className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      className="w-full rounded-md border px-2 py-1 text-sm
+                                 bg-white text-slate-900 border-slate-300
+                                 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500
+                                 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700
+                                 dark:focus:ring-sky-500/40 dark:focus:border-sky-500"
                     >
                       <option value="false">No</option>
                       <option value="true">Yes</option>
-                    </select>                  
+                    </select>
                   </td>
+
                   {isEditing && (
-                    <td className="px-2 py-2 border-b border-slate-100 text-center">
+                    <td className="border-b px-2 py-2 text-center
+                                   border-slate-100 dark:border-slate-700">
                       <button
                         onClick={() => removeRow(index)}
-                        className="text-rose-600 hover:text-rose-800 p-1"
+                        className="p-1 text-rose-600 hover:text-rose-700 focus:outline-none
+                                   dark:text-rose-400 dark:hover:text-rose-300"
                         title="Remove"
                       >
                         <Trash2 size={16} />
@@ -123,13 +170,16 @@ const HolidayCard: React.FC<HolidayCardProps> = ({
                   )}
                 </tr>
               ))}
+
               {isEditing && (
-                <tr>
+                <tr className="dark:bg-slate-900">
                   <td colSpan={5} className="px-4 py-3 text-center">
                     <button
                       type="button"
                       onClick={addEmptyRow}
-                      className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800"
+                      className="inline-flex items-center gap-1 text-sm font-medium
+                                 text-blue-600 hover:text-blue-700
+                                 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       + Add Holiday
                     </button>

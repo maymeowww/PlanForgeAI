@@ -14,6 +14,20 @@ type Props = {
   toBool: (val: string) => boolean;
 };
 
+const inputBase =
+  "rounded-md border px-3 py-1 text-sm w-40 " +
+  "bg-white text-slate-900 placeholder:text-slate-400 border-slate-300 " +
+  "focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 " +
+  "dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:border-slate-700 " +
+  "dark:focus:ring-sky-500/40 dark:focus:border-sky-500";
+
+const numBase =
+  "rounded-md border px-3 py-1 text-sm w-32 " +
+  "bg-white text-slate-900 border-slate-300 " +
+  "focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 " +
+  "dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700 " +
+  "dark:focus:ring-sky-500/40 dark:focus:border-sky-500";
+
 const ConstraintCard: React.FC<Props> = ({
   constraints,
   setConstraints,
@@ -23,18 +37,25 @@ const ConstraintCard: React.FC<Props> = ({
   return (
     <section
       id="constraints"
-      className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4 mt-4"
+      className="scroll-mt-24 mt-4 rounded-2xl border p-4 shadow-sm
+                 bg-white border-slate-200
+                 dark:bg-slate-900 dark:border-slate-700"
     >
-      <h2 className="text-lg font-semibold mb-4">
+      <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">
         Constraints (Maintenance, Material Ready)
       </h2>
 
-      <fieldset disabled={!isEditing} className={!isEditing ? "opacity-80 select-none" : ""}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <fieldset
+        disabled={!isEditing}
+        className={!isEditing ? "select-none opacity-80" : ""}
+      >
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <label className="flex items-center gap-3">
-            <span className="w-56 text-sm">Enforce Maintenance Windows</span>
+            <span className="w-56 text-sm text-slate-700 dark:text-slate-300">
+              Enforce Maintenance Windows
+            </span>
             <select
-              className="rounded-md border border-slate-300 px-3 py-1 w-40 text-sm"
+              className={inputBase}
               value={String(constraints.enforce_maintenance)}
               onChange={(e) =>
                 setConstraints({
@@ -50,9 +71,11 @@ const ConstraintCard: React.FC<Props> = ({
           </label>
 
           <label className="flex items-center gap-3">
-            <span className="w-56 text-sm">Enforce Material Ready</span>
+            <span className="w-56 text-sm text-slate-700 dark:text-slate-300">
+              Enforce Material Ready
+            </span>
             <select
-              className="rounded-md border border-slate-300 px-3 py-1 w-40 text-sm"
+              className={inputBase}
               value={String(constraints.enforce_material_ready)}
               onChange={(e) =>
                 setConstraints({
@@ -68,12 +91,14 @@ const ConstraintCard: React.FC<Props> = ({
           </label>
 
           <label className="flex items-center gap-3">
-            <span className="w-56 text-sm">Material Ready Offset (min)</span>
+            <span className="w-56 text-sm text-slate-700 dark:text-slate-300">
+              Material Ready Offset (min)
+            </span>
             <input
               type="number"
               min={0}
               step={5}
-              className="rounded-md border border-slate-300 px-3 py-1 w-32 text-sm"
+              className={numBase}
               value={constraints.material_ready_offset_min}
               onChange={(e) =>
                 setConstraints({
@@ -86,12 +111,14 @@ const ConstraintCard: React.FC<Props> = ({
           </label>
 
           <label className="flex items-center gap-3">
-            <span className="w-56 text-sm">Freeze Window (min)</span>
+            <span className="w-56 text-sm text-slate-700 dark:text-slate-300">
+              Freeze Window (min)
+            </span>
             <input
               type="number"
               min={0}
               step={5}
-              className="rounded-md border border-slate-300 px-3 py-1 w-32 text-sm"
+              className={numBase}
               value={constraints.freeze_window_min}
               onChange={(e) =>
                 setConstraints({

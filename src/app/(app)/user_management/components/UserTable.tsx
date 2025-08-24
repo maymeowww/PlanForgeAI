@@ -1,4 +1,4 @@
-import Badge from "@/src/components/shared/Badge";
+import StatusBadge from "@/src/components/shared/StatusBadge";
 import IconButton from "@/src/components/shared/button/IconButton";
 import { Group, Permission, Screen, User } from "@/src/types";
 import { Edit3, Trash2 } from "lucide-react";
@@ -10,18 +10,6 @@ type Props = {
   onToggleActive: (user_id: number) => void;
   onChangeGroup: (user_id: number, group_id: number) => void;
 };
-
-// const Badge = ({ active }: { active: boolean }) => (
-//   <span
-//     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border
-//       ${active
-//         ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-//         : "bg-rose-50 text-rose-700 border-rose-300"
-//       }`}
-//   >
-//     {active ? "Active" : "Inactive"}
-//   </span>
-// );
 
 export default function UserTable({
   users,
@@ -87,7 +75,7 @@ export default function UserTable({
               {/* Status */}
               <td className="px-4 py-2">
                 {/* <Badge active={!!u.is_active} /> */}
-                <Badge label="Default" type="blue" />
+                <StatusBadge label="Default" type="blue" />
               </td>
 
               {/* Actions */}

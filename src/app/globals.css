@@ -54,3 +54,26 @@
 .iconbtn:hover{background:#f8fafc}
 .iconbtn.ok{background:#10b981;border-color:#059669;color:#fff}
 .iconbtn.warn{background:#ef4444;border-color:#dc2626;color:#fff}
+
+
+/* Minimal scroll styling */
+.modal-scrollable {
+  max-height: 70vh; /* กำหนดความสูง */
+  overflow-y: auto; /* เปิด scroll แนวตั้ง */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(100,100,100,0.5) transparent; /* Firefox */
+}
+
+/* Chrome, Edge, Safari */
+.modal-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scrollable::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 100, 100, 0.5);
+  border-radius: 3px;
+}
+
+.modal-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}

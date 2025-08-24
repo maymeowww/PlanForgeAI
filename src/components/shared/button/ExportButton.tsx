@@ -7,19 +7,21 @@ import IconButton from "./IconButton";
 type ExportType = "json" | "csv" | "txt";
 
 type Props = {
-  label?: string;                 // tooltip ของปุ่ม
-  filename?: string;              // ชื่อพื้นฐานของไฟล์ (จะเติมนามสกุลให้อัตโนมัติ)
-  data: any;                      // ข้อมูลที่จะ export
-  defaultType?: ExportType;       // ค่าเริ่มต้นเวลาเปิดเมนู
-  allowedTypes?: ExportType[];    // จำกัดประเภทที่ให้เลือก (ไม่ระบุ = ทั้งหมด)
-  className?: string;
-  csvDelimiter?: string;          // ตัวคั่น CSV (ค่าเริ่มต้น = ,)
-  csvIncludeHeader?: boolean;     // ใส่ header แถวแรก (default true)
-  csvWithBOM?: boolean;           // เพิ่ม BOM เพื่อกันภาษาไทยเพี้ยนใน Excel (default true)
+  label?: string;                 
+  tooltip?: string;                 
+  filename?: string;              
+  data: any;                      
+  defaultType?: ExportType;       
+  allowedTypes?: ExportType[];    
+  className?: string
+  csvDelimiter?: string;          
+  csvIncludeHeader?: boolean;     
+  csvWithBOM?: boolean;           
 };
 
 export default function ExportButton({
-  label = "Export",
+  label="Export",
+  tooltip,
   filename = "data",
   data,
   defaultType = "json",
@@ -126,51 +128,45 @@ export default function ExportButton({
 
   return (
     <div className={`relative inline-block ${className}`} ref={menuRef}>
-      <IconButton tooltip={label} onClick={() => setOpen((v) => !v)}>
+      <IconButton tooltip={tooltip} label={label} onClick={() => setOpen((v) => !v)}>
         <Upload size={18} />
       </IconButton>
 
       {open && (
-<div
-  role="menu"
-  aria-label="Choose export file type"
-  className="absolute right-0 z-[9999] mt-2 min-w-44 rounded-xl border border-black/10 bg-white shadow-xl"
->
-  {/* header */}
-  <div className="sticky top-0 z-10 bg-white px-3 py-2 text-xs font-medium text-gray-500 border-b">
-    Export as…
-  </div>
+        <div
+          role="menu"
+          aria-label="Choose export file type"
+          className="absolute right-0 z-[9999] mt-2 min-w-44 rounded-xl border border-black/10 bg-white shadow-xl"
+        >
+          {/* header */}
+          {options.map((opt) => (
+            <button
+              key={opt}
+              role="menuitem"
+              onClick={() => onChoose(opt)}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              <span className="capitalize">{opt}</span>
+              {pendingType === opt && <Check size={16} className="ml-auto" />}
+            </button>
+          ))}
 
-  {options.map((opt) => (
-    <button
-      key={opt}
-      role="menuitem"
-      onClick={() => onChoose(opt)}
-      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-gray-100"
-    >
-      <span className="capitalize">{opt}</span>
-      {pendingType === opt && <Check size={16} className="ml-auto" />}
-    </button>
-  ))}
-
-  {/* แถวปุ่มย่อย: เลือกไว้ก่อนแล้วค่อยกด Export */}
-  <div className="flex items-center justify-between gap-2 border-t px-3 py-2">
-    <div className="text-xs text-gray-500">
-      Selected: <b className="uppercase">{pendingType}</b>
-    </div>
-    <button
-      onClick={() => {
-        doExport(pendingType);
-        setOpen(false);
-      }}
-      className="rounded-md bg-black px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
-    >
-      Export
-    </button>
-  </div>
-</div>
-
-
+          {/* แถวปุ่มย่อย: เลือกไว้ก่อนแล้วค่อยกด Export */}
+          <div className="flex items-center justify-between gap-2 border-t px-3 py-2">
+            <div className="text-xs text-gray-500">
+              Selected: <b className="uppercase">{pendingType}</b>
+            </div>
+            <button
+              onClick={() => {
+                doExport(pendingType);
+                setOpen(false);
+              }}
+              className="rounded-md bg-black px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+            >
+              Export
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,258 +1,244 @@
+"use client";
+
 import React from "react";
-import { Plus, Upload, Edit3, Trash2, X } from "lucide-react";
+import clsx from "clsx";
+import {
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import Dropdown from "./input/Dropdown";
 
-type TableColumn<T> = {
+type Column<T> = {
   key: keyof T | string;
-  label: string;
-  width?: string;
-  render?: (item: T) => React.ReactNode;
+  header: string;
+  render?: (row: T, rowIndex: number) => React.ReactNode;
+  className?: string;
+  headerClassName?: string;
 };
 
-type TableProps<T> = {
-  columns: TableColumn<T>[];
+type PaginationProps = {
+  total: number;
+  page: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
+  pageSizes?: number[];
+};
+
+type Props<T> = {
+  columns: Column<T>[];
   data: T[];
-  currentPage: number;
-  pageSize: number;
-  totalItems: number;
-  onPageChange: (page: number) => void;
-  openOrderModal: (id: number | string) => void;
-  delOrder: (id: number | string) => void;
+  className?: string;
+  pagination?: PaginationProps;
+  emptyText?: string;
 };
 
-function Pagination({
-  currentPage,
-  totalItems,
-  pageSize,
-  onPageChange,
-}: {
-  currentPage: number;
-  totalItems: number;
-  pageSize: number;
-  onPageChange: (page: number) => void;
-}) {
-  const totalPages = Math.ceil(totalItems / pageSize);
-
-  if (totalPages === 0) return null;
-
-  const pagesToShow = 5;
-  let startPage = Math.max(currentPage - Math.floor(pagesToShow / 2), 1);
-  let endPage = startPage + pagesToShow - 1;
-
-  if (endPage > totalPages) {
-    endPage = totalPages;
-    startPage = Math.max(endPage - pagesToShow + 1, 1);
-  }
-
-  const pages = [];
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i);
-  }
-
-  return (
-    <nav
-      className="flex items-center flex-col md:flex-row justify-between w-full gap-2"
-      aria-label="Table navigation"
-    >
-      <span className="text-sm text-gray-600">
-        Showing{" "}
-        <span className="font-medium text-gray-900">
-          {(currentPage - 1) * pageSize + 1}
-        </span>{" "}
-        to{" "}
-        <span className="font-medium text-gray-900">
-          {Math.min(currentPage * pageSize, totalItems)}
-        </span>{" "}
-        of{" "}
-        <span className="font-medium text-gray-900">{totalItems}</span> entries
-      </span>
-
-      <ul className="inline-flex -space-x-px rtl:space-x-reverse text-sm h-8">
-        <li>
-          <button
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
-          >
-            Previous
-          </button>
-        </li>
-
-        {startPage > 1 && (
-          <>
-            <li>
-              <button
-                onClick={() => onPageChange(1)}
-                className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700"
-              >
-                1
-              </button>
-            </li>
-            {startPage > 2 && (
-              <li className="flex items-center px-2 text-gray-400">…</li>
-            )}
-          </>
-        )}
-
-        {pages.map((p) => (
-          <li key={p}>
-            <button
-              onClick={() => onPageChange(p)}
-              className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${
-                p === currentPage
-                  ? "text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700"
-                  : "text-gray-500 bg-white hover:bg-gray-100 hover:text-gray-700"
-              }`}
-              aria-current={p === currentPage ? "page" : undefined}
-            >
-              {p}
-            </button>
-          </li>
-        ))}
-
-        {endPage < totalPages && (
-          <>
-            {endPage < totalPages - 1 && (
-              <li className="flex items-center px-2 text-gray-400">…</li>
-            )}
-            <li>
-              <button
-                onClick={() => onPageChange(totalPages)}
-                className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700"
-              >
-                {totalPages}
-              </button>
-            </li>
-          </>
-        )}
-
-        <li>
-          <button
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
-          >
-            Next
-          </button>
-        </li>
-      </ul>
-    </nav>
-  );
-}
-
-
-const IconButton = ({
-  children,
-  tooltip,
-  variant,
-  onClick,
-}: {
-  children: React.ReactNode;
-  tooltip?: string;
-  variant?: "warn" | "default";
-  onClick: () => void;
-}) => {
-  const baseClasses =
-    "p-2 rounded-md hover:bg-gray-200 transition-colors cursor-pointer inline-flex items-center justify-center";
-  const warnClasses = "text-red-600 hover:bg-red-100";
-
-  return (
-    <button
-      onClick={onClick}
-      title={tooltip}
-      className={`${baseClasses} ${variant === "warn" ? warnClasses : "text-gray-600"}`}
-      type="button"
-    >
-      {children}
-    </button>
-  );
-};
-
-export default function Table<T>({
+export default function CommonTable<T extends Record<string, any>>({
   columns,
   data,
-  currentPage,
-  pageSize,
-  totalItems,
-  onPageChange,
-  openOrderModal,
-  delOrder,
-}: TableProps<T>) {
-  const start = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const end = Math.min(currentPage * pageSize, totalItems);
+  className = "",
+  pagination,
+  emptyText = "No data",
+}: Props<T>) {
+  const hasPagination =
+    !!pagination &&
+    typeof pagination.total === "number" &&
+    typeof pagination.page === "number" &&
+    typeof pagination.pageSize === "number" &&
+    typeof pagination.onPageChange === "function";
+
+  const total = hasPagination ? pagination!.total : data.length;
+  const page = hasPagination ? pagination!.page : 1;
+  const pageSize = hasPagination ? pagination!.pageSize : data.length || 10;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const end = total === 0 ? 0 : Math.min(total, page * pageSize);
+
+  const pageWindow = getPageWindow(page, pageCount, 5);
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-300 shadow-sm">
-      <table className="w-full text-sm text-left border-collapse">
-        <thead className="bg-gray-50">
+    <div className={clsx("relative overflow-x-auto shadow-sm sm:rounded-xl", className)}>
+      <table className="w-full text-sm text-left rtl:text-right text-slate-600 dark:text-slate-300">
+        <thead className="text-xs text-slate-700 uppercase bg-slate-50 dark:bg-slate-800/60 dark:text-slate-300">
           <tr>
             {columns.map((col) => (
               <th
                 key={String(col.key)}
-                className="px-5 py-3 border-b border-gray-200 font-semibold text-gray-700"
-                style={{ width: col.width }}
+                scope="col"
+                className={clsx("px-6 py-3 font-semibold", col.headerClassName)}
               >
-                {col.label}
+                {col.header}
               </th>
             ))}
-            <th className="px-5 py-3 border-b border-gray-200 w-24 text-center font-semibold text-gray-700">Actions</th>
           </tr>
         </thead>
 
         <tbody>
-          {data.length === 0 && (
-            <tr>
-              <td colSpan={columns.length + 1} className="text-center py-6 text-gray-500">
-                No data found.
+          {data.length === 0 ? (
+            <tr className="bg-white dark:bg-slate-900">
+              <td
+                className="px-6 py-10 text-center text-slate-400 dark:text-slate-500"
+                colSpan={columns.length}
+              >
+                {emptyText}
               </td>
             </tr>
+          ) : (
+            data.map((row, i) => (
+              <tr
+                key={i}
+                className="bg-white border-b border-slate-100 dark:bg-slate-900 dark:border-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-800/70"
+              >
+                {columns.map((col) => (
+                  <td key={String(col.key)} className={clsx("px-6 py-4", col.className)}>
+                    {col.render ? col.render(row, i) : String(row[col.key] ?? "")}
+                  </td>
+                ))}
+              </tr>
+            ))
           )}
-
-          {data.map((item, i) => (
-            <tr
-              key={i}
-              className="even:bg-white odd:bg-gray-50 hover:bg-blue-50 cursor-pointer transition"
-            >
-              {columns.map((col) => (
-                <td
-                  key={String(col.key)}
-                  className="px-5 py-3 border-b border-gray-200 align-middle"
-                >
-                  {col.render ? col.render(item) : (item as any)[col.key]}
-                </td>
-              ))}
-
-              <td className="px-5 py-3 border-b border-gray-200 text-center">
-                <div className="inline-flex gap-2 justify-center">
-                    <IconButton
-                    tooltip="Edit"
-                    onClick={() => openOrderModal((item as any).id)}
-                    >
-                    <Edit3 size={16} />
-                    </IconButton>
-
-                    <IconButton
-                    tooltip="Delete"
-                    variant="warn"
-                    onClick={() => delOrder((item as any).id)}
-                    >
-                    <Trash2 size={16} />
-                    </IconButton>
-                </div>
-                </td>
-
-            </tr>
-          ))}
         </tbody>
       </table>
 
-      <div className="flex justify-between items-center mt-4 px-5 py-3 bg-gray-50 rounded-b-md text-gray-600 text-sm select-none">     
-        <Pagination
-          currentPage={currentPage}
-          totalItems={totalItems}
-          pageSize={pageSize}
-          onPageChange={onPageChange}
-        />
-      </div>
+      {hasPagination && (
+        <nav
+          className="flex items-center flex-col gap-3 md:flex-row md:justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 dark:supports-[backdrop-filter]:bg-slate-900/40 rounded-b-xl"
+          aria-label="Table navigation"
+        >
+          {/* Left: summary + rows per page */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-500 dark:text-slate-400">
+              Showing{" "}
+              <span className="font-semibold text-slate-900 dark:text-white">
+                {start}-{end}
+              </span>{" "}
+              of{" "}
+              <span className="font-semibold text-slate-900 dark:text-white">
+                {total}
+              </span>
+            </span>
+
+            {pagination?.onPageSizeChange && (
+              <div className="hidden sm:flex items-center gap-2">
+                <span className="text-sm text-slate-500 dark:text-slate-400">
+                  Rows per page
+                </span>
+                <Dropdown
+                  value={String(pageSize)} 
+                  onChange={(val) => pagination.onPageSizeChange?.(Number(val))}
+                  options={(pagination.pageSizes ?? [10, 20, 50]).map((size) => ({
+                    label: String(size),
+                    value: String(size),
+                  }))}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Right: pagination controls */}
+          <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+            <span className="md:hidden text-sm text-slate-500 dark:text-slate-400">
+              Page <b className="text-slate-900 dark:text-white">{page}</b> / {pageCount}
+            </span>
+
+            <div className="inline-flex items-center rounded-2xl overflow-hidden border border-slate-300 dark:border-slate-700 shadow-sm">
+              <PaginationButton
+                onClick={() => pagination.onPageChange(Math.max(1, page - 1))}
+                disabled={page <= 1}
+                first
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </PaginationButton>
+
+              {pageWindow.map((p, idx) =>
+                p === "…" ? (
+                  <PaginationButton key={`ellipsis-${idx}`} disabled>
+                    …
+                  </PaginationButton>
+                ) : (
+                  <PaginationButton
+                    key={p}
+                    active={p === page}
+                    onClick={() => pagination.onPageChange(p)}
+                  >
+                    {p}
+                  </PaginationButton>
+                )
+              )}
+
+              <PaginationButton
+                onClick={() => pagination.onPageChange(Math.min(pageCount, page + 1))}
+                disabled={page >= pageCount}
+                last
+              >
+                <ChevronRight className="w-4 h-4" />
+              </PaginationButton>
+            </div>
+          </div>
+        </nav>
+      )}
     </div>
+  );
+}
+
+/* ---------- Helpers ---------- */
+
+function getPageWindow(current: number, totalPages: number, windowSize = 5): (number | "…")[] {
+  if (totalPages <= windowSize) return Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  const half = Math.floor(windowSize / 2);
+  let start = Math.max(1, current - half);
+  let end = Math.min(totalPages, start + windowSize - 1);
+
+  if (end - start + 1 < windowSize) start = Math.max(1, end - windowSize + 1);
+
+  const pages: (number | "…")[] = [];
+  if (start > 1) {
+    pages.push(1);
+    if (start > 2) pages.push("…");
+  }
+  for (let p = start; p <= end; p++) pages.push(p);
+  if (end < totalPages) {
+    if (end < totalPages - 1) pages.push("…");
+    pages.push(totalPages);
+  }
+  return pages;
+}
+
+/* ---------- Pagination Button ---------- */
+function PaginationButton({
+  children,
+  onClick,
+  disabled,
+  active,
+  first,
+  last,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  active?: boolean;
+  first?: boolean;
+  last?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={clsx(
+        "h-8 px-3 text-sm transition-colors focus:outline-none",
+        "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300",
+        "hover:bg-slate-100 dark:hover:bg-slate-700",
+        !first && "border-l border-slate-300 dark:border-slate-700",
+        first && "rounded-l-2xl",
+        last && "rounded-r-2xl",
+        active &&
+          "bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-white font-semibold",
+        disabled && "opacity-60 cursor-not-allowed hover:bg-inherit"
+      )}
+    >
+      {children}
+    </button>
   );
 }

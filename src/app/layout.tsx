@@ -1,11 +1,29 @@
 // src/app/layout.tsx
 import "./globals.css";
-import { ReactNode } from "react";
+import { ThemeProvider } from "@/src/context/ThemeContext";
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="bg-slate-50">{children}</body>
+    <html lang="th" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function () {
+  try {
+    var t = localStorage.getItem('theme') || 'light';
+    if (t === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  } catch (e) {}
+})();
+            `,
+          }}
+        />
+      </head>
+
+      <body className="bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-50">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

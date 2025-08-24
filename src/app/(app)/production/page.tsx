@@ -5,6 +5,7 @@ import ProductEditor from "@/src/components/ProductEditor";
 import Card from "@/src/components/shared/card/Card";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
+import PageHeader from "@/src/components/layout/PageHeader";
 
 function StatusBadge({
   color = "gray",
@@ -94,48 +95,23 @@ export default function ProductionPage() {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
-    <header
-      className={clsx(
-        "sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 py-2",
-        hasShadow ? "shadow-sm" : "shadow-none"
-      )}
-    >
-      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 px-6 py-2 pb-1 min-w-0">
-        <h1 className="text-xl md:text-2xl font-bold leading-tight truncate">
-          Production
-        </h1>
-      
-      </div>
-
-    <div className="max-w-6xl mx-auto px-6 pb-3 overflow-x-auto">
-      <div className="flex items-center gap-3">
-        <div className="flex gap-3">
-          <button className="inline-flex items-center rounded-lg bg-purple-600 px-5 py-2 text-white hover:opacity-90 transition">
-            AI Generate Plan
-          </button>
-          <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-white hover:opacity-90 transition">
-            + New Plan
-          </button>
-          <button className="inline-flex items-center rounded-lg bg-green-600 px-5 py-2 text-white hover:opacity-90 transition">
-            Save Plan
-          </button>
-        </div>
-
-        <div className="ml-auto">
-          <ImportButton
-            label="Import CSV/Excel"
-            onFilesSelected={(files) => {
-              // TODO: parse ไฟล์แล้ว map ใส่ orders / lanes
-              console.log("planning import:", files[0]?.name);
-            }}
-          />
-        </div>
-      </div>
-    </div>
-
-    </header>
-
+    <>
+      <PageHeader 
+        title="Production"
+        actions={
+          <>
+             <button className="inline-flex items-center rounded-lg bg-purple-600 px-5 py-2 text-white hover:opacity-90 transition">
+              AI Generate Plan
+            </button>
+            <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-white hover:opacity-90 transition">
+              + New Plan
+            </button>
+            <button className="inline-flex items-center rounded-lg bg-green-600 px-5 py-2 text-white hover:opacity-90 transition">
+              Save Plan
+            </button>
+          </>
+        }
+      />
 
       <div className="max-w-6xl mx-auto px-6 py-6">
         {/* KPIs */}
@@ -262,6 +238,6 @@ export default function ProductionPage() {
 
         {/* <ProductEditor/> */}
       </div>
-    </div>
+    </>
   );
 }

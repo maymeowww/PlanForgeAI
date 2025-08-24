@@ -6,6 +6,7 @@ import SuggestionCard from "./components/SuggestionCard";
 import MaterialCard from "./components/MaterialCard";
 import CapacityCard from "./components/CapacityCard";
 import DropSlot from "./components/DropSlot";
+import PageHeader from "@/src/components/layout/PageHeader";
 
 /** ---------- Types ---------- */
 type OrderItem = {
@@ -187,45 +188,24 @@ export default function PlanningPage() {
   }, [schedule]);
 
   return (
-    <div id="planning-page" className="min-h-screen bg-slate-50 text-slate-800">
+    <div>
       {/* Header */}
-      <header
-        className={clsx(
-          "py-2 sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70",
-          hasShadow ? "shadow-sm" : "shadow-none"
-        )}
-      >
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-xl md:text-2xl font-bold leading-tight">AI Production Planning</h1>
-          </div>
-
-          {/* Action Icons */}
-          <div className="flex items-center gap-2">
-           <button
-            onClick={onAIGenerate}
-            className="bg-ai text-white px-4 py-2 rounded-lg bg-purple-600  hover:bg-purple-700"
-          >
-            🤖 AI Generate Plan
-          </button>
-          <button
-            onClick={onNewPlan}
-            className="bg-primary text-white px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700"
-          >
-            + New Plan
-          </button>
-          <button
-            onClick={onSavePlan}
-            disabled={!saveEnabled}
-            className={`bg-success text-white px-4 py-2 rounded-lg hover:bg-green-700 ${
-              saveEnabled ? "" : "opacity-50"
-            }`}
-          >
-            Save Plan
-          </button>
-          </div>
-        </div>
-      </header>
+      <PageHeader 
+        title="AI Production Planning"
+        actions={
+          <>
+            <button className="inline-flex items-center rounded-lg bg-purple-600 px-5 py-2 text-white hover:opacity-90 transition">
+              🤖AI Generate Plan
+            </button>
+            <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-white hover:opacity-90 transition">
+              + New Plan
+            </button>
+            <button className="inline-flex items-center rounded-lg bg-green-600 px-5 py-2 text-white hover:opacity-90 transition">
+              Save Plan
+            </button>
+          </>
+        }
+      />
       
       <div className="max-w-6xl mx-auto px-6 py-6">
         {/* AI Draft Status */}

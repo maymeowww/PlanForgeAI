@@ -13,59 +13,70 @@ interface Props {
   maint: MaintWin[];
   setMaint: (data: MaintWin[]) => void;
   isEditing: boolean;
-  th: string;
-  cell: string;
 }
 
-const MaintenanceCard: React.FC<Props> = ({
-  maint,
-  setMaint,
-  isEditing,
-  th,
-  cell,
-}) => {
+/* ---- table styles (รองรับ light/dark) ---- */
+const th =
+  "px-4 py-2 text-left text-xs font-semibold " +
+  "text-slate-700 border-b border-slate-200 " +
+  "dark:text-slate-300 dark:border-slate-700";
+
+const cell =
+  "px-4 py-2 border-b border-slate-100 " +
+  "dark:border-slate-700";
+
+const rowBase =
+  "transition hover:bg-blue-50 even:bg-white odd:bg-slate-50 " +
+  "dark:hover:bg-slate-800/70 dark:even:bg-slate-900 dark:odd:bg-slate-800";
+
+const inputBase =
+  "w-full rounded-md border px-2 py-1 text-sm " +
+  "bg-white text-slate-900 placeholder:text-slate-400 border-slate-300 " +
+  "focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 " +
+  "dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:border-slate-700 " +
+  "dark:focus:ring-sky-500/40 dark:focus:border-sky-500";
+
+const MaintenanceCard: React.FC<Props> = ({ maint, setMaint, isEditing }) => {
   const addEmptyRow = () => {
     setMaint([
       ...maint,
-      {
-        machine_id: "",
-        start_dt: "",
-        end_dt: "",
-        type: "PM",
-        note: "",
-      },
+      { machine_id: "", start_dt: "", end_dt: "", type: "PM", note: "" },
     ]);
   };
 
   return (
     <section
       id="maint"
-      className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4 mt-4"
+      className="scroll-mt-24 mt-4 rounded-2xl border p-4 shadow-sm
+                 bg-white border-slate-200
+                 dark:bg-slate-900 dark:border-slate-700"
     >
-      <h2 className="text-lg font-semibold mb-4">Maintenance Windows</h2>
+      <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">
+        Maintenance Windows
+      </h2>
 
-      <fieldset disabled={!isEditing} className={!isEditing ? "opacity-80 select-none" : ""}>
-        <div className="overflow-auto rounded-md border border-slate-200">
-          <table className="w-full text-sm text-left border-collapse">
-            <thead className="bg-slate-100 text-slate-600 text-xs">
+      <fieldset
+        disabled={!isEditing}
+        className={!isEditing ? "select-none opacity-80" : ""}
+      >
+        <div className="overflow-auto rounded-md border border-slate-200 dark:border-slate-700">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead className="bg-slate-100 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300">
               <tr>
-                <th className={th + " w-32"}>Machine ID</th>
-                <th className={th + " w-56"}>Start</th>
-                <th className={th + " w-56"}>End</th>
-                <th className={th + " w-40"}>Type</th>
+                <th className={`${th} w-32`}>Machine ID</th>
+                <th className={`${th} w-56`}>Start</th>
+                <th className={`${th} w-56`}>End</th>
+                <th className={`${th} w-40`}>Type</th>
                 <th className={th}>Note</th>
-                {isEditing && <th className={th + " w-10 text-center"} />}
+                {isEditing && <th className={`${th} w-10 text-center`} />}
               </tr>
             </thead>
             <tbody>
               {maint.map((m, i) => (
-                <tr
-                  key={i}
-                  className="even:bg-white odd:bg-slate-50 hover:bg-blue-50 transition"
-                >
+                <tr key={i} className={rowBase}>
                   <td className={cell}>
                     <input
-                      className="w-full rounded-md border border-slate-300 px-2 py-1"
+                      className={inputBase}
                       placeholder="M1"
                       value={m.machine_id}
                       onChange={(e) =>
@@ -77,10 +88,11 @@ const MaintenanceCard: React.FC<Props> = ({
                       }
                     />
                   </td>
+
                   <td className={cell}>
                     <input
                       type="datetime-local"
-                      className="w-full rounded-md border border-slate-300 px-2 py-1"
+                      className={inputBase}
                       value={m.start_dt}
                       onChange={(e) =>
                         setMaint(
@@ -91,10 +103,11 @@ const MaintenanceCard: React.FC<Props> = ({
                       }
                     />
                   </td>
+
                   <td className={cell}>
                     <input
                       type="datetime-local"
-                      className="w-full rounded-md border border-slate-300 px-2 py-1"
+                      className={inputBase}
                       value={m.end_dt}
                       onChange={(e) =>
                         setMaint(
@@ -105,9 +118,10 @@ const MaintenanceCard: React.FC<Props> = ({
                       }
                     />
                   </td>
+
                   <td className={cell}>
                     <select
-                      className="w-full rounded-md border border-slate-300 px-2 py-1"
+                      className={inputBase}
                       value={m.type}
                       onChange={(e) =>
                         setMaint(
@@ -123,9 +137,10 @@ const MaintenanceCard: React.FC<Props> = ({
                       <option value="Unplanned">Unplanned</option>
                     </select>
                   </td>
+
                   <td className={cell}>
                     <input
-                      className="w-full rounded-md border border-slate-300 px-2 py-1"
+                      className={inputBase}
                       placeholder="note"
                       value={m.note}
                       onChange={(e) =>
@@ -137,14 +152,17 @@ const MaintenanceCard: React.FC<Props> = ({
                       }
                     />
                   </td>
+
                   {isEditing && (
-                    <td className={cell + " text-center"}>
+                    <td className={`${cell} text-center`}>
                       <button
                         onClick={() =>
                           setMaint(maint.filter((_, j) => j !== i))
                         }
-                        className="text-rose-600 hover:text-rose-800 p-1 disabled:opacity-50"
+                        className="p-1 text-rose-600 hover:text-rose-700 focus:outline-none
+                                   dark:text-rose-400 dark:hover:text-rose-300"
                         title="Remove"
+                        type="button"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -152,13 +170,16 @@ const MaintenanceCard: React.FC<Props> = ({
                   )}
                 </tr>
               ))}
+
               {isEditing && (
-                <tr>
+                <tr className="dark:bg-slate-900">
                   <td colSpan={6} className="px-4 py-3 text-center">
                     <button
                       type="button"
                       onClick={addEmptyRow}
-                      className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800"
+                      className="inline-flex items-center gap-1 text-sm font-medium
+                                 text-blue-600 hover:text-blue-700
+                                 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       + Add Maintenance Window
                     </button>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Card from "@/src/components/shared/card/Card";
 import clsx from "clsx";
 import MachineStatusCard from "./components/MachineStatus";
+import PageHeader from "@/src/components/layout/PageHeader";
 
 // ProgressRing component for SVG progress ring
 function ProgressRing({
@@ -172,18 +173,8 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
-      {/* Header */}
-      <header
-        className={clsx(
-          "py-2 sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70",
-          hasShadow ? "shadow-sm" : "shadow-none"
-        )}
-      >
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-3">
-          <h1 className="text-xl md:text-2xl font-bold leading-tight">⚙️ Dashboard</h1>
-        </div>
-      </header>
+    <>
+      <PageHeader title="Dashboard"/>
 
       {/* Main Content */}
       <main className="flex-1">
@@ -214,6 +205,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
-    </div>
+    </>
   );
 }

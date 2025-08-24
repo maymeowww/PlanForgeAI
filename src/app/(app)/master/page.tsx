@@ -10,12 +10,12 @@ import Dropdown from "@/src/components/shared/input/Dropdown";
 import SearchInput from "@/src/components/shared/input/SearchInput";
 import clsx from "clsx";
 
-// ใช้ Table เดียว (ตัวที่คุณอัปโหลด)
-import Table from "@/src/components/shared/Table";
-
 import OrderModal from "@/src/app/(app)/master/components/OrderModal";
 import ProductModal from "@/src/app/(app)/master/components/ProductModal";
 import MachineModal from "@/src/app/(app)/master/components/MachineModal";
+import PageHeader from "@/src/components/layout/PageHeader";
+import CommonTable from "@/src/components/shared/Table";
+import { StatusBadge } from "@/src/components/shared/StatusBadge";
 
 /** ========= Types ========= */
 type Order = {
@@ -71,17 +71,8 @@ const MasterDataPage: React.FC = () => {
     { label: "products", value: "products" },
     { label: "machines", value: "machines" },
   ] as const;
-  type ViewMode = typeof segmentOptions[number]["value"];
+  type ViewMode = (typeof segmentOptions)[number]["value"];
   const [tab, setTab] = useState<ViewMode>("orders");
-
-  // header shadow
-  const [hasShadow, setHasShadow] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setHasShadow(window.scrollY > 4);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   /** mock data (state) */
   const [orders, setOrders] = useState<Order[]>([
@@ -102,11 +93,11 @@ const MasterDataPage: React.FC = () => {
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [editOrderId, setEditOrderId] = useState<number | null>(null);
   const orderStatusOptions: { label: string; value: "" | Order["status"] }[] = [
-    { label: "ทุกสถานะ", value: "" },
-    { label: "pending", value: "pending" },
-    { label: "released", value: "released" },
-    { label: "completed", value: "completed" },
-    { label: "cancelled", value: "cancelled" },
+    { label: "All Status", value: "" },
+    { label: "Pending", value: "pending" },
+    { label: "Released", value: "released" },
+    { label: "Completed", value: "completed" },
+    { label: "Cancelled", value: "cancelled" },
   ];
 
   /** ====== Products UI state ====== */
@@ -198,10 +189,6 @@ const MasterDataPage: React.FC = () => {
   /** ===== Products modal handlers ===== */
   const openProductModal = (id: number | null = null) => {
     setEditProdId(id);
-    if (id) {
-      const p = products.find((x) => x.id === id);
-      // set states ถ้าคุณใช้ภายใน ProductModal ก็ไม่ต้องเซ็ตละเอียดที่นี่
-    }
     setProdModalOpen(true);
   };
   const delProduct = (id: number) => {
@@ -355,186 +342,205 @@ const MasterDataPage: React.FC = () => {
 
   /** ========= Columns ========= */
   const orderColumns = [
-    { label: "No.", key: "order_id", width: "80px" },
-    { label: "Order No.", key: "order_number", render: (o: any) => <b>{o.order_number}</b> },
-    { label: "Customer", key: "customer_id" },
-    { label: "Due", key: "due_date", render: (o: any) => o.due_date || "-" },
-    { label: "Status", key: "status" },
-    { label: "Remarks", key: "remarks", render: (o: any) => o.remarks || "-" },
-  ];
+    {
+      key: "action",
+      header: "Action",
+      className: "text-right",
+      render: (o: Order) => (
+        <div className="flex justify-end gap-2">
+          <IconButton buttonClassName="px-2 py-1" onClick={() => openOrderModal(o.order_id ?? null)}>
+            <Edit3 size={16} />
+          </IconButton>
+          <IconButton variant="warn" buttonClassName="px-2 py-1" onClick={() => o.order_id && delOrder(o.order_id)}>
+            <Trash2 size={16} />
+          </IconButton>
+        </div>
+      ),
+    },
+    { key: "order_number", header: "Order No.", render: (o: Order) => <b>{o.order_number}</b> },
+    { key: "customer_id", header: "Customer" },
+    { key: "due_date", header: "Due", render: (o: Order) => o.due_date || "-" },
+    { key: "status", header: "Status",  render: (o: Order) => <StatusBadge status={o.status} />  },
+    { key: "remarks", header: "Remarks", render: (o: Order) => o.remarks || "-" },
+  ] as const;
 
   const productColumns = [
-    { label: "ID", key: "id" },
-    { label: "Code", key: "product_number", render: (p: any) => <b>{p.product_number}</b> },
-    { label: "Name", key: "name" },
-    { label: "Category", key: "category", render: (p: any) => p.category || "-" },
-    { label: "Std (min)", key: "std_rate_min", render: (p: any) => p.std_rate_min ?? "-" },
-    { label: "Unit", key: "unit_code", render: (p: any) => p.unit_code || "-" },
-    { label: "Description", key: "description", render: (p: any) => p.description || "-" },
-  ];
+    {
+      key: "action",
+      header: "Action",
+      className: "text-right",
+      render: (p: Product) => (
+        <div className="flex justify-end gap-2">
+          <IconButton buttonClassName="px-2 py-1" onClick={() => openProductModal(p.id ?? null)}>
+            <Edit3 size={16} />
+          </IconButton>
+          <IconButton variant="warn" buttonClassName="px-2 py-1" onClick={() => p.id && delProduct(p.id)}>
+            <Trash2 size={16} />
+          </IconButton>
+        </div>
+      ),
+    },
+    { key: "product_number", header: "Code", render: (p: Product) => <b>{p.product_number}</b> },
+    { key: "name", header: "Name" },
+    { key: "category", header: "Category", render: (p: Product) => p.category || "-" },
+    { key: "std_rate_min", header: "Std (min)", render: (p: Product) => p.std_rate_min ?? "-" },
+    { key: "unit_code", header: "Unit", render: (p: Product) => p.unit_code || "-" },
+    { key: "description", header: "Description", render: (p: Product) => p.description || "-" },
+  ] as const;
 
   const machineColumns = [
-    { label: "ID", key: "machine_id" },
-    { label: "Code", key: "machine_code", render: (m: any) => <b>{m.machine_code}</b> },
-    { label: "Name", key: "name", render: (m: any) => m.name || "-" },
-    { label: "Type", key: "type", render: (m: any) => m.type || "-" },
-    { label: "Status", key: "status" },
-    { label: "Location", key: "location_id", render: (m: any) => m.location_id || "-" },
-    { label: "Std Rate", key: "std_rate_min", render: (m: any) => m.std_rate_min ?? "-" },
-    { label: "Unit", key: "capacity_unit", render: (m: any) => m.capacity_unit || "-" },
-  ];
+    {
+      key: "action",
+      header: "Action",
+      className: "text-right",
+      render: (m: Machine) => (
+        <div className="flex justify-end gap-2">
+          <IconButton buttonClassName="px-2 py-1" onClick={() => openMachineModal(m.machine_id)}>
+            <Edit3 size={16} />
+          </IconButton>
+          <IconButton variant="warn" buttonClassName="px-2 py-1" onClick={() => delMachine(m.machine_id)}>
+            <Trash2 size={16} />
+          </IconButton>
+        </div>
+      ),
+    },
+    { key: "machine_id", header: "ID", className: "w-[120px]" },
+    { key: "machine_code", header: "Code", render: (m: Machine) => <b>{m.machine_code}</b> },
+    { key: "name", header: "Name", render: (m: Machine) => m.name || "-" },
+    { key: "type", header: "Type", render: (m: Machine) => m.type || "-" },
+    { 
+      key: "status", 
+      header: "Status", 
+      render: (m: Machine) => <StatusBadge status={m.status} /> 
+    },
+    { key: "location_id", header: "Location", render: (m: Machine) => m.location_id || "-" },
+    { key: "std_rate_min", header: "Std Rate", render: (m: Machine) => m.std_rate_min ?? "-" },
+    { key: "capacity_unit", header: "Unit", render: (m: Machine) => m.capacity_unit || "-" },
+  ] as const;
 
   /** ========= Pagination states (แยกต่อแท็บ) ========= */
-  const pageSize = 10;
   const [pageOrders, setPageOrders] = useState(1);
   const [pageProducts, setPageProducts] = useState(1);
   const [pageMachines, setPageMachines] = useState(1);
+  const [pageSizeOrders, setPageSizeOrders] = useState(10);
+  const [pageSizeProducts, setPageSizeProducts] = useState(10);
+  const [pageSizeMachines, setPageSizeMachines] = useState(10);
 
   // reset page เมื่อ filter เปลี่ยน
   useEffect(() => { setPageOrders(1); }, [orderQ, orderStatus]);
   useEffect(() => { setPageProducts(1); }, [prodQ]);
   useEffect(() => { setPageMachines(1); }, [macQ]);
 
-  /** ========= Derived (add id + slice page) ========= */
-  const ordersWithId = useMemo(
-    () => filteredOrders.map(o => ({ ...o, id: o.order_id ?? undefined })),
-    [filteredOrders]
-  );
-  const productsWithId = useMemo(
-    () => filteredProducts.map(p => ({ ...p, id: p.id ?? undefined })),
-    [filteredProducts]
-  );
-  const machinesWithId = useMemo(
-    () => filteredMachines.map(m => ({ ...m, id: m.machine_id })), // ให้ id = machine_id (string)
-    [filteredMachines]
-  );
+  /** ========= Derived (slice page) ========= */
+  const ordersWithId = useMemo(() => filteredOrders, [filteredOrders]);
+  const productsWithId = useMemo(() => filteredProducts, [filteredProducts]);
+  const machinesWithId = useMemo(() => filteredMachines, [filteredMachines]);
 
-  const pagedOrders = paginate(ordersWithId, pageOrders, pageSize);
-  const pagedProducts = paginate(productsWithId, pageProducts, pageSize);
-  const pagedMachines = paginate(machinesWithId, pageMachines, pageSize);
+  const pagedOrders = useMemo(
+    () => paginate(ordersWithId, pageOrders, pageSizeOrders),
+    [ordersWithId, pageOrders, pageSizeOrders]
+  );
+  const pagedProducts = useMemo(
+    () => paginate(productsWithId, pageProducts, pageSizeProducts),
+    [productsWithId, pageProducts, pageSizeProducts]
+  );
+  const pagedMachines = useMemo(
+    () => paginate(machinesWithId, pageMachines, pageSizeMachines),
+    [machinesWithId, pageMachines, pageSizeMachines]
+  );
 
   return (
     <>
-      <header
-        className={clsx(
-          "py-2 sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 overflow-hidden",
-          hasShadow ? "shadow-sm" : "shadow-none"
-        )}
-      >
-        <div className="max-w-6xl mx-auto px-6 py-2 pb-1 flex items-center justify-between gap-3 min-w-0">
-          <h1 className="text-xl md:text-2xl font-bold leading-tight">Master</h1>
-          <div className="flex items-center gap-2 min-w-0">
+      <PageHeader
+        title="Master"
+        actions={
+          <>
             <ImportButton
-              label="Import CSV/Excel"
               onFilesSelected={(files) => {
                 console.log("planning import:", files[0]?.name);
               }}
             />
-            <ExportButton
-              label="Export JSON"
-              filename="master.json"
-              data={{ orders, products, machines }}
-              type="json"
-            />
-          </div>
-        </div>
-
-        <div className="max-w-6xl mx-auto px-3 md:px-6 pb-2 overflow-x-auto">
-          <Segment<ViewMode> value={tab} onChange={setTab} options={segmentOptions} />
-        </div>
-      </header>
+            <ExportButton filename="master.json" data={{ orders, products, machines }} />
+          </>
+        }
+        tabs={<Segment<ViewMode> value={tab} onChange={setTab} options={segmentOptions} />}
+      />
 
       <div className="max-w-6xl mx-auto px-6 py-6">
         {/* ORDERS */}
-        <section className={`bg-white border rounded-2xl shadow-sm p-4 ${tab !== "orders" ? "hidden" : ""}`} style={{ marginTop: 16 }}>
+        <section className={clsx(tab !== "orders" && "hidden")}>
           <div className="flex flex-wrap gap-2 items-center mb-3">
-            <SearchInput
-              value={orderQ}
-              onChange={setOrderQ}
-              placeholder="ค้นหา order_number / customer_id / status"
-            />
-            <Dropdown
-              value={orderStatus}
-              onChange={(value) => setOrderStatus(value as "" | Order["status"])}
-              options={orderStatusOptions}
-            />
+            <SearchInput value={orderQ} onChange={setOrderQ} placeholder="order no. | customer" />
+            <Dropdown value={orderStatus} onChange={(value) => setOrderStatus(value as "" | Order["status"])} options={orderStatusOptions} />
             <div className="ml-auto">
-              <IconButton variant="ok" tooltip="New Order" onClick={() => openOrderModal(null)}>
+              <IconButton variant="ok" label="New Order" onClick={() => openOrderModal(null)}>
                 <Plus size={18} />
               </IconButton>
             </div>
           </div>
 
-          <div className="overflow-auto">
-            <Table
-              columns={orderColumns}
-              data={pagedOrders}
-              currentPage={pageOrders}
-              pageSize={pageSize}
-              totalItems={ordersWithId.length}
-              onPageChange={setPageOrders}
-              openOrderModal={(id) => openOrderModal(Number(id))}
-              delOrder={(id) => delOrder(Number(id))}
-            />
-          </div>
+          <CommonTable<Order>
+            columns={orderColumns as any}
+            data={pagedOrders}
+            pagination={{
+              total: ordersWithId.length,
+              page: pageOrders,
+              pageSize: pageSizeOrders,
+              onPageChange: setPageOrders,
+              onPageSizeChange: setPageSizeOrders,
+              pageSizes: [10, 20, 50],
+            }}
+          />
         </section>
 
         {/* PRODUCTS */}
-        <section className={`bg-white border rounded-2xl shadow-sm p-4 ${tab !== "products" ? "hidden" : ""}`} style={{ marginTop: 16 }}>
+        <section className={clsx(tab !== "products" && "hidden")}>
           <div className="flex flex-wrap gap-2 items-center mb-3">
-            <SearchInput
-              value={prodQ}
-              onChange={setProdQ}
-              placeholder="ค้นหา product_number / ชื่อ / หมวดหมู่"
-            />
+            <SearchInput value={prodQ} onChange={setProdQ} placeholder="ค้นหา product_number / ชื่อ / หมวดหมู่" />
             <div className="ml-auto">
-              <IconButton variant="ok" tooltip="New Product" onClick={() => openProductModal(null)}>
+              <IconButton variant="ok" label="New Product" onClick={() => openProductModal(null)}>
                 <Plus size={18} />
               </IconButton>
             </div>
           </div>
 
-          <div className="overflow-auto">
-            <Table
-              columns={productColumns}
-              data={pagedProducts}
-              currentPage={pageProducts}
-              pageSize={pageSize}
-              totalItems={productsWithId.length}
-              onPageChange={setPageProducts}
-              openOrderModal={(id) => openProductModal(Number(id))}
-              delOrder={(id) => delProduct(Number(id))}
-            />
-          </div>
+          <CommonTable<Product>
+            columns={productColumns as any}
+            data={pagedProducts}
+            pagination={{
+              total: productsWithId.length,
+              page: pageProducts,
+              pageSize: pageSizeProducts,
+              onPageChange: setPageProducts,
+              onPageSizeChange: setPageSizeProducts,
+              pageSizes: [10, 20, 50],
+            }}
+          />
         </section>
 
         {/* MACHINES */}
-        <section className={`bg-white border rounded-2xl shadow-sm p-4 ${tab !== "machines" ? "hidden" : ""}`} style={{ marginTop: 16 }}>
+        <section className={clsx(tab !== "machines" && "hidden")}>
           <div className="flex flex-wrap gap-2 items-center mb-3">
-            <SearchInput
-              value={macQ}
-              onChange={setMacQ}
-              placeholder="ค้นหา machine_code / name / type / status"
-            />
+            <SearchInput value={macQ} onChange={setMacQ} placeholder="ค้นหา machine_code / name / type / status" />
             <div className="ml-auto">
-              <IconButton variant="ok" tooltip="New Machine" onClick={() => openMachineModal(null)}>
+              <IconButton variant="ok" label="New Machine" onClick={() => openMachineModal(null)}>
                 <Plus size={18} />
               </IconButton>
             </div>
           </div>
 
-          <div className="overflow-auto">
-            <Table
-              columns={machineColumns}
-              data={pagedMachines}
-              currentPage={pageMachines}
-              pageSize={pageSize}
-              totalItems={machinesWithId.length}
-              onPageChange={setPageMachines}
-              openOrderModal={(id) => openMachineModal(String(id))}
-              delOrder={(id) => delMachine(String(id))}
-            />
-          </div>
+          <CommonTable<Machine>
+            columns={machineColumns as any}
+            data={pagedMachines}
+            pagination={{
+              total: machinesWithId.length,
+              page: pageMachines,
+              pageSize: pageSizeMachines,
+              onPageChange: setPageMachines,
+              onPageSizeChange: setPageSizeMachines,
+              pageSizes: [10, 20, 50],
+            }}
+          />
         </section>
       </div>
 

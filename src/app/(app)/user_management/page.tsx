@@ -17,6 +17,7 @@ import UserModal from "./components/UserModal";
 import UserTable from "./components/UserTable";
 import Table from "@/src/components/shared/Table";
 import SearchInput from "@/src/components/shared/input/SearchInput";
+import PageHeader from "@/src/components/layout/PageHeader";
 
 const groups: Group[] = [
   { group_id: 1, group_name: "Admin" },
@@ -284,54 +285,30 @@ const userColumns = [
     fr.readAsText(file);
   }
 
-  const [hasShadow, setHasShadow] = useState(false); 
-  
-  useEffect(() => {
-    const onScroll = () => setHasShadow(window.scrollY > 4);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
+    <>
       {/* Header */}
-      <header
-        className={clsx(
-          "py-2 sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 overflow-hidden",
-          hasShadow ? "shadow-sm" : "shadow-none"
-        )}
-      >
-        <div className="max-w-6xl mx-auto px-6 py-2 pb-1 flex items-center justify-between gap-3 min-w-0">
-          <h1 className="text-xl md:text-2xl font-bold leading-tight">User Management</h1>
-          <div className="flex items-center gap-2 min-w-0">
+      <PageHeader
+        title="User Management"
+        actions={
+          <>
             <ImportButton
-              label="Import CSV/Excel"
               onFilesSelected={(files) => {
                 console.log("planning import:", files[0]?.name);
               }}
             />
-            <ExportButton
-              label="Export JSON"
-              filename="users.json"
-              data={users}
-              type="json"
-            /> 
-            
-          </div>
-        </div>
-
-        <div className="max-w-6xl mx-auto px-3 md:px-6 pb-2 overflow-x-auto">
-          <Segment<ViewMode> value={tab} onChange={setTab} options={segmentOptions} />
-        </div>
-      </header>
+            <ExportButton filename="users.json" data={users} />
+          </>
+        }
+        tabs={<Segment<ViewMode> value={tab} onChange={setTab} options={segmentOptions} />}
+      />
              
       <div className="max-w-6xl mx-auto px-6 py-6">
         {/* Tab: Users */}
         {tab === "users" && (
-          <section className=" bg-white border rounded-2xl shadow-sm p-4">
+          <section>
             {/* filter row */}
-           <div className="mb-3 flex flex-wrap items-center gap-3">             
+            <div className="mb-3 flex flex-wrap items-center gap-3">             
               <SearchInput
                 value={q}
                 onChange={setQ}
@@ -401,6 +378,6 @@ const userColumns = [
           groups={groups}
           editing={editing ?? undefined}
         />
-    </div>
+    </>
   );
 }

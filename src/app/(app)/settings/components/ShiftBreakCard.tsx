@@ -22,10 +22,26 @@ type Props = {
   isEditing: boolean;
 };
 
-const th = "px-4 py-2 text-left text-xs font-semibold text-slate-600 border-b border-slate-200";
-const cell = "px-4 py-2 border-b border-slate-100";
+/* ----- table cell styles (รองรับ dark) ----- */
+const th =
+  "px-4 py-2 text-left text-xs font-semibold " +
+  "text-slate-700 border-b border-slate-200 " +
+  "dark:text-slate-300 dark:border-slate-700";
 
-const toArrayString = (arr: string[]) => arr.join(",");
+const cell =
+  "px-4 py-2 border-b border-slate-100 " +
+  "dark:border-slate-700";
+
+const inputBase =
+  "w-full rounded-md border px-2 py-1 text-sm " +
+  "bg-white text-slate-900 placeholder:text-slate-400 border-slate-300 " +
+  "focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 " +
+  "dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:border-slate-700 " +
+  "dark:focus:ring-sky-500/40 dark:focus:border-sky-500";
+
+const rowBase =
+  "transition hover:bg-blue-50 even:bg-white odd:bg-slate-50 " +
+  "dark:hover:bg-slate-800/70 dark:even:bg-slate-900 dark:odd:bg-slate-800";
 
 const ShiftBreakCard: React.FC<Props> = ({
   shifts,
@@ -36,7 +52,10 @@ const ShiftBreakCard: React.FC<Props> = ({
 }) => {
   // Shift handlers
   const addShiftRow = useCallback(() => {
-    setShifts((prev) => [...prev, { code: "", start: "08:00", end: "17:00", lines: [] }]);
+    setShifts((prev) => [
+      ...prev,
+      { code: "", start: "08:00", end: "17:00", lines: [] },
+    ]);
   }, [setShifts]);
 
   const removeShiftRow = useCallback(
@@ -57,7 +76,10 @@ const ShiftBreakCard: React.FC<Props> = ({
 
   // Break handlers
   const addBreakRow = useCallback(() => {
-    setBreaks((prev) => [...prev, { shift_code: "", start: "12:00", end: "13:00" }]);
+    setBreaks((prev) => [
+      ...prev,
+      { shift_code: "", start: "12:00", end: "13:00" },
+    ]);
   }, [setBreaks]);
 
   const removeBreakRow = useCallback(
@@ -77,34 +99,49 @@ const ShiftBreakCard: React.FC<Props> = ({
   );
 
   return (
-    <section className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4 mt-4">
-      <h2 className="text-lg font-semibold mb-2">Shifts & Breaks</h2>
-      <p className="text-xs text-slate-500 mb-4">นิยามกะทำงานและช่วงพัก</p>
+    <section
+      className="scroll-mt-24 mt-4 rounded-2xl border p-4 shadow-sm
+                 bg-white border-slate-200
+                 dark:bg-slate-900 dark:border-slate-700"
+    >
+      <h2 className="mb-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
+        Shifts & Breaks
+      </h2>
+      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+        นิยามกะทำงานและช่วงพัก
+      </p>
 
-      <fieldset disabled={!isEditing} className={!isEditing ? "opacity-80 select-none" : ""}>
+      <fieldset
+        disabled={!isEditing}
+        className={!isEditing ? "select-none opacity-80" : ""}
+      >
         {/* Shifts Table */}
-        <h3 className="text-sm font-semibold text-slate-700 mb-2">Shifts</h3>
-        <div className="overflow-auto rounded-md border border-slate-200">
-          <table className="w-full text-sm text-left border-collapse">
-            <thead className="bg-slate-100 text-slate-600 text-xs">
+        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+          Shifts
+        </h3>
+        <div
+          className="overflow-auto rounded-md border
+                     border-slate-200 dark:border-slate-700"
+        >
+          <table className="w-full border-collapse text-left text-sm">
+            <thead className="bg-slate-100 text-slate-700 text-xs dark:bg-slate-800 dark:text-slate-300">
               <tr>
                 <th className={`${th} w-36`}>Shift Code</th>
                 <th className={`${th} w-40`}>Start</th>
                 <th className={`${th} w-40`}>End</th>
                 <th className={th}>Lines (optional)</th>
-                {isEditing && <th className={`${th} w-10 text-center`}>Action</th>}
+                {isEditing && (
+                  <th className={`${th} w-10 text-center`}>Action</th>
+                )}
               </tr>
             </thead>
             <tbody>
               {shifts.map((s, i) => (
-                <tr
-                  key={i}
-                  className="even:bg-white odd:bg-slate-50 hover:bg-blue-50 transition"
-                >
+                <tr key={i} className={rowBase}>
                   <td className={cell}>
                     <input
                       type="text"
-                      className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      className={inputBase}
                       placeholder="A"
                       value={s.code}
                       onChange={(e) => updateShiftRow(i, { code: e.target.value })}
@@ -114,7 +151,7 @@ const ShiftBreakCard: React.FC<Props> = ({
                   <td className={cell}>
                     <input
                       type="time"
-                      className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      className={inputBase}
                       value={s.start}
                       onChange={(e) => updateShiftRow(i, { start: e.target.value })}
                       disabled={!isEditing}
@@ -123,7 +160,7 @@ const ShiftBreakCard: React.FC<Props> = ({
                   <td className={cell}>
                     <input
                       type="time"
-                      className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      className={inputBase}
                       value={s.end}
                       onChange={(e) => updateShiftRow(i, { end: e.target.value })}
                       disabled={!isEditing}
@@ -132,9 +169,9 @@ const ShiftBreakCard: React.FC<Props> = ({
                   <td className={cell}>
                     <input
                       type="text"
-                      className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      className={inputBase}
                       placeholder="Assembly,Packing"
-                      value={toArrayString(s.lines)}
+                      value={s.lines.join(",")}
                       onChange={(e) =>
                         updateShiftRow(i, {
                           lines: e.target.value
@@ -150,7 +187,8 @@ const ShiftBreakCard: React.FC<Props> = ({
                     <td className={`${cell} text-center`}>
                       <button
                         onClick={() => removeShiftRow(i)}
-                        className="text-rose-600 hover:text-rose-800 p-1"
+                        className="p-1 text-rose-600 hover:text-rose-700 focus:outline-none
+                                   dark:text-rose-400 dark:hover:text-rose-300"
                         title="Remove"
                         type="button"
                       >
@@ -162,12 +200,14 @@ const ShiftBreakCard: React.FC<Props> = ({
               ))}
 
               {isEditing && (
-                <tr>
+                <tr className="dark:bg-slate-900">
                   <td colSpan={isEditing ? 5 : 4} className="px-4 py-3 text-center">
                     <button
                       type="button"
                       onClick={addShiftRow}
-                      className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800"
+                      className="inline-flex items-center gap-1 text-sm font-medium
+                                 text-blue-600 hover:text-blue-700
+                                 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       + Add Shift
                     </button>
@@ -179,37 +219,43 @@ const ShiftBreakCard: React.FC<Props> = ({
         </div>
 
         {/* Breaks Table */}
-        <h3 className="text-sm font-semibold text-slate-700 mt-6 mb-2">Breaks</h3>
-        <div className="overflow-auto rounded-md border border-slate-200">
-          <table className="w-full text-sm text-left border-collapse">
-            <thead className="bg-slate-100 text-slate-600 text-xs">
+        <h3 className="mt-6 mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+          Breaks
+        </h3>
+        <div
+          className="overflow-auto rounded-md border
+                     border-slate-200 dark:border-slate-700"
+        >
+          <table className="w-full border-collapse text-left text-sm">
+            <thead className="bg-slate-100 text-slate-700 text-xs dark:bg-slate-800 dark:text-slate-300">
               <tr>
                 <th className={`${th} w-36`}>Shift Code</th>
                 <th className={`${th} w-40`}>Break Start</th>
                 <th className={`${th} w-40`}>Break End</th>
-                {isEditing && <th className={`${th} w-10 text-center`}>Action</th>}
+                {isEditing && (
+                  <th className={`${th} w-10 text-center`}>Action</th>
+                )}
               </tr>
             </thead>
             <tbody>
               {breaks.map((b, i) => (
-                <tr
-                  key={i}
-                  className="even:bg-white odd:bg-slate-50 hover:bg-blue-50 transition"
-                >
+                <tr key={i} className={rowBase}>
                   <td className={cell}>
                     <input
                       type="text"
-                      className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      className={inputBase}
                       placeholder="A"
                       value={b.shift_code}
-                      onChange={(e) => updateBreakRow(i, { shift_code: e.target.value })}
+                      onChange={(e) =>
+                        updateBreakRow(i, { shift_code: e.target.value })
+                      }
                       disabled={!isEditing}
                     />
                   </td>
                   <td className={cell}>
                     <input
                       type="time"
-                      className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      className={inputBase}
                       value={b.start}
                       onChange={(e) => updateBreakRow(i, { start: e.target.value })}
                       disabled={!isEditing}
@@ -218,7 +264,7 @@ const ShiftBreakCard: React.FC<Props> = ({
                   <td className={cell}>
                     <input
                       type="time"
-                      className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      className={inputBase}
                       value={b.end}
                       onChange={(e) => updateBreakRow(i, { end: e.target.value })}
                       disabled={!isEditing}
@@ -228,7 +274,8 @@ const ShiftBreakCard: React.FC<Props> = ({
                     <td className={`${cell} text-center`}>
                       <button
                         onClick={() => removeBreakRow(i)}
-                        className="text-rose-600 hover:text-rose-800 p-1"
+                        className="p-1 text-rose-600 hover:text-rose-700 focus:outline-none
+                                   dark:text-rose-400 dark:hover:text-rose-300"
                         title="Remove"
                         type="button"
                       >
@@ -240,12 +287,14 @@ const ShiftBreakCard: React.FC<Props> = ({
               ))}
 
               {isEditing && (
-                <tr>
+                <tr className="dark:bg-slate-900">
                   <td colSpan={isEditing ? 4 : 3} className="px-4 py-3 text-center">
                     <button
                       type="button"
                       onClick={addBreakRow}
-                      className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800"
+                      className="inline-flex items-center gap-1 text-sm font-medium
+                                 text-blue-600 hover:text-blue-700
+                                 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       + Add Break
                     </button>

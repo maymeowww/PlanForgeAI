@@ -14,6 +14,7 @@ import ShiftBreakCard from "./components/ShiftBreakCard";
 import OTCard from "./components/OTCard";
 import ConstraintCard from "./components/ConstraintCard";
 import MaintenanceCard from "./components/MaintenanceCard";
+import PageHeader from "@/src/components/layout/PageHeader";
 
 /* ---------- Types ---------- */
 type Holiday = { start_date: string; end_date: string; description: string; is_recurring: boolean };
@@ -49,15 +50,6 @@ function downloadJSON(filename: string, data: unknown) {
 /* ========================================= */
 export default function ProjectSettings() {
   const [isEditing, setIsEditing] = useState(false);
-  const [hasShadow, setHasShadow] = useState(false); // เงา header เมื่อสกอลล์
-
-  // header shadow on scroll
-  useEffect(() => {
-    const onScroll = () => setHasShadow(window.scrollY > 4);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   // seed states
   const [holidays, setHolidays] = useState<Holiday[]>([
@@ -132,30 +124,14 @@ export default function ProjectSettings() {
 
   function handleCancel() {
     setIsEditing(false);
-    // ถ้าต้องการ revert ค่ากลับ ให้เก็บ snapshot state ตอนกด Edit แล้ว set กลับที่นี่
   }
 
-  const cell = "p-2 align-top";
-  const th = "p-2 text-left text-xs font-semibold text-slate-500";
-  const iconBtn = "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition shadow-sm";
-
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
-      <header
-        className={clsx(
-          "py-2 sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70",
-          hasShadow ? "shadow-sm" : "shadow-none"
-        )}
-      >
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-xl md:text-2xl font-bold leading-tight">⚙️ Project Settings</h1>
-            <p className="text-xs md:text-sm text-slate-600 truncate">
-              กำหนดกะทำงาน, วันหยุด, OT/Setup/Buffer, ข้อจำกัด และบำรุงรักษา
-            </p>
-          </div>
-
-          {/* Action Icons */}
+    <>
+      <PageHeader
+        title="⚙️ Project Settings"
+        description="กำหนดกะทำงาน, วันหยุด, OT/Setup/Buffer, ข้อจำกัด และบำรุงรักษา"
+        actions={
           <div className="flex items-center gap-2">
             {!isEditing ? (              
               <IconButton tooltip="Edit" onClick={() => setIsEditing(true)}>
@@ -173,34 +149,41 @@ export default function ProjectSettings() {
               </>
             )}
           </div>
-        </div>
-
-        {/* ======= Top Menu ======= */}
-        <nav className="max-w-6xl mx-auto px-3 md:px-6 pb-2 overflow-x-auto">
-          <ul className="flex items-center gap-1 text-[13px]">
-            {[
-              { href: "#cal", label: "Calendar / Holidays" },
-              { href: "#shifts", label: "Shifts & Breaks" },
-              { href: "#ot", label: "OT / Setup / Buffer" },
-              { href: "#constraints", label: "Constraints" },
-              { href: "#maint", label: "Maintenance" },
-            ].map((it) => (
-              <li key={it.href}>
-                <a
-                  href={it.href}
-                  className="inline-flex whitespace-nowrap items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:bg-slate-100"
-                >
-                  {it.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </header>
+        }
+        tabs={
+          <nav>
+            <ul className="flex items-center gap-1 text-[13px]">
+              {[
+                { href: "#cal", label: "Calendar / Holidays" },
+                { href: "#shifts", label: "Shifts & Breaks" },
+                { href: "#ot", label: "OT / Setup / Buffer" },
+                { href: "#constraints", label: "Constraints" },
+                { href: "#maint", label: "Maintenance" },
+              ].map((it) => (
+                <li key={it.href}>
+                  <a
+                    href={it.href}
+                    className="
+                      inline-flex items-center whitespace-nowrap rounded-lg
+                      border px-3 py-1.5
+                      text-slate-700 bg-white border-slate-200
+                      hover:bg-slate-50 hover:text-slate-900
+                      dark:text-slate-200 dark:bg-slate-800 dark:border-slate-600
+                      dark:hover:bg-slate-700 dark:hover:text-white
+                      transition-colors
+                    "
+                  >
+                    {it.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        }
+      />
 
       {/* ======= Content ======= */}
       <div className="max-w-6xl mx-auto px-6 py-6">
-
         <HolidayCard
           holidays={holidays}
           setHolidays={setHolidays}
@@ -238,10 +221,8 @@ export default function ProjectSettings() {
           maint={maint}
           setMaint={setMaint}
           isEditing={isEditing}
-          th={th}
-          cell={cell}
         />
       </div>
-    </div>
+    </>
   );
 }
