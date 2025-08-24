@@ -348,7 +348,6 @@ const userColumns = [
                 setUsers((prev) => prev.filter((u) => u.user_id !== id))
               }
             />
-
           </section>
         )}
 

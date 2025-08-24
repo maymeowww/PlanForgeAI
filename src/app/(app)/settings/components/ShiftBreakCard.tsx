@@ -107,9 +107,6 @@ const ShiftBreakCard: React.FC<Props> = ({
       <h2 className="mb-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
         Shifts & Breaks
       </h2>
-      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-        นิยามกะทำงานและช่วงพัก
-      </p>
 
       <fieldset
         disabled={!isEditing}
@@ -119,10 +116,7 @@ const ShiftBreakCard: React.FC<Props> = ({
         <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
           Shifts
         </h3>
-        <div
-          className="overflow-auto rounded-md border
-                     border-slate-200 dark:border-slate-700"
-        >
+        <div className="overflow-auto rounded-md border border-slate-200 dark:border-slate-700">
           <table className="w-full border-collapse text-left text-sm">
             <thead className="bg-slate-100 text-slate-700 text-xs dark:bg-slate-800 dark:text-slate-300">
               <tr>

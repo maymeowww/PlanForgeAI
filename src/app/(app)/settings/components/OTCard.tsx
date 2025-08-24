@@ -15,8 +15,8 @@ type SetupMatrixRule = {
 };
 
 type Props = {
-  otRules: OTRules;
-  setOTRules: React.Dispatch<React.SetStateAction<OTRules>>;
+  otRules: OTRules | null;
+  setOTRules: React.Dispatch<React.SetStateAction<OTRules | null>>;
   setupMatrix: SetupMatrixRule[];
   setSetupMatrix: React.Dispatch<React.SetStateAction<SetupMatrixRule[]>>;
   isEditing: boolean;
@@ -52,6 +52,11 @@ const OTCard: React.FC<Props> = ({
   isEditing,
   toBool,
 }) => {
+  // ป้องกัน otRules เป็น null
+  if (!otRules) {
+    return <p>Loading OT rules...</p>;
+  }
+
   return (
     <section
       id="ot"
@@ -170,7 +175,7 @@ const OTCard: React.FC<Props> = ({
             </thead>
             <tbody>
               {setupMatrix.map((r, i) => (
-                <tr key={i} className={rowBase}>
+                <tr key={`${r.from}-${r.to}-${i}`} className={rowBase}>
                   <td className={cell}>
                     <input
                       className={inputBase}

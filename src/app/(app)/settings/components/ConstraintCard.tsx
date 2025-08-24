@@ -8,8 +8,8 @@ type Constraints = {
 };
 
 type Props = {
-  constraints: Constraints;
-  setConstraints: React.Dispatch<React.SetStateAction<Constraints>>;
+  constraints: Constraints | null;
+  setConstraints: React.Dispatch<React.SetStateAction<Constraints | null>>;
   isEditing: boolean;
   toBool: (val: string) => boolean;
 };
@@ -34,6 +34,16 @@ const ConstraintCard: React.FC<Props> = ({
   isEditing,
   toBool,
 }) => {
+  if (!constraints) {
+    return <p>Loading constraints...</p>;
+  }
+
+  // ฟังก์ชันช่วยแปลงตัวเลขอย่างปลอดภัย
+  const parseNumber = (value: string, fallback = 0) => {
+    const n = Number(value);
+    return isNaN(n) || n < 0 ? fallback : n;
+  };
+
   return (
     <section
       id="constraints"
@@ -103,7 +113,7 @@ const ConstraintCard: React.FC<Props> = ({
               onChange={(e) =>
                 setConstraints({
                   ...constraints,
-                  material_ready_offset_min: Number(e.target.value) || 0,
+                  material_ready_offset_min: parseNumber(e.target.value),
                 })
               }
               disabled={!isEditing}
@@ -123,7 +133,7 @@ const ConstraintCard: React.FC<Props> = ({
               onChange={(e) =>
                 setConstraints({
                   ...constraints,
-                  freeze_window_min: Number(e.target.value) || 0,
+                  freeze_window_min: parseNumber(e.target.value),
                 })
               }
               disabled={!isEditing}
