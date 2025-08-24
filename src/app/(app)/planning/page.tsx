@@ -1,7 +1,9 @@
 "use client";
-import Card from "@/src/components/shared/card/Card";
-import clsx from "clsx";
+
 import React, { useEffect, useMemo, useState } from "react";
+import clsx from "clsx";
+
+import Card from "@/src/components/shared/card/Card";
 import SuggestionCard from "./components/SuggestionCard";
 import MaterialCard from "./components/MaterialCard";
 import CapacityCard from "./components/CapacityCard";
@@ -25,7 +27,6 @@ type Slot = {
 };
 
 type Line = "A" | "B" | "C";
-
 type ScheduleState = Record<Line, Slot[]>;
 
 /** ---------- Mock data ---------- */
@@ -39,12 +40,7 @@ const initialOrders: OrderItem[] = [
 
 const initialSchedule: ScheduleState = {
   A: [
-    {
-      id: "A-current",
-      label: "Current",
-      kind: "info",
-      orderId: undefined, // แสดงสถานะปัจจุบัน (mock ข้อความใน UI)
-    },
+    { id: "A-current", label: "Current", kind: "info" },
     { id: "A-next", label: "14:30 - 18:00", kind: "open" },
     { id: "A-maint", label: "Preventive • 30 min (16:30-17:00)", kind: "maintenance" },
     { id: "A-after", label: "17:00 - 20:00", kind: "open" },
@@ -61,14 +57,13 @@ const initialSchedule: ScheduleState = {
   ],
 };
 
-// mock compatibility: ปรับตามจริงได้
+// mock compatibility
 const compatible: Record<Line, string[]> = {
   A: ["Product A", "Product F", "Product G", "Product B"],
   B: ["Product F", "Product B", "Product H"],
   C: ["Product A", "Product H"],
 };
 
-/** ---------- Component ---------- */
 export default function PlanningPage() {
   const [orders, setOrders] = useState<OrderItem[]>(initialOrders);
   const [schedule, setSchedule] = useState<ScheduleState>(initialSchedule);
@@ -87,24 +82,18 @@ export default function PlanningPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-
   // header KPI mock
   const kpis = [
     { icon: "📋", label: "Active Plans", value: "12", sub: "3 lines running", color: "primary" },
     { icon: "✅", label: "Plan Efficiency", value: "94%", sub: "+2% vs target", color: "success" },
     { icon: "⏰", label: "Pending Orders", value: String(orders.length), sub: "Need scheduling", color: "warning" },
-    { icon: "🎯", label: "AI Suggestions", value: "5", sub: "Optimization ready", color: "primary" }, // 'ai' → 'primary'
+    { icon: "🎯", label: "AI Suggestions", value: "5", sub: "Optimization ready", color: "primary" },
   ] as const;
 
-
   /** ---------- Actions ---------- */
-  const onAIGenerate = () => {
-    // เปิดแถบ AI Draft; ในโปรดักชัน: call API แล้ว set draft data
-    setAiDraftVisible(true);
-  };
+  const onAIGenerate = () => setAiDraftVisible(true);
 
   const onApproveDraft = () => {
-    // ตัวอย่าง: เอา WO-2024-006 ไปลง B-next ถ้าเข้ากันได้
     const draftPick = orders.find((o) => o.id === "WO-2024-006");
     if (!draftPick) return;
 
@@ -119,17 +108,13 @@ export default function PlanningPage() {
     setAiDraftVisible(false);
   };
 
-  const onRejectDraft = () => {
-    setAiDraftVisible(false);
-  };
+  const onRejectDraft = () => setAiDraftVisible(false);
 
   const onNewPlan = () => {
-    // ใส่ logic เปิด modal สร้างแผนใหม่
     alert("Open Create Plan modal (stub)");
   };
 
   const onSavePlan = () => {
-    // ส่งข้อมูล schedule + orders ไป backend
     alert("Plan saved!");
     setSaveEnabled(false);
   };
@@ -156,9 +141,7 @@ export default function PlanningPage() {
 
     // block placing on maintenance/info
     const slot = schedule[line].find((s) => s.id === slotId);
-    if (!slot || slot.kind === "maintenance" || slot.kind === "info") {
-      return;
-    }
+    if (!slot || slot.kind === "maintenance" || slot.kind === "info") return;
 
     // ถ้าช่องว่าง → วางได้
     setSchedule((prev) => ({
@@ -173,18 +156,13 @@ export default function PlanningPage() {
 
   /** ---------- Derived ---------- */
   const utilization = useMemo(() => {
-    // mock: คิดจากจำนวนช่องที่ถูกใช้ (orderId) เทียบกับทั้งหมด (เฉพาะ kind=open)
     const toPct = (line: Line) => {
       const total = schedule[line].filter((s) => s.kind === "open").length;
       const used = schedule[line].filter((s) => s.kind === "open" && s.orderId).length;
       if (total === 0) return 0;
       return Math.round((used / total) * 100);
     };
-    return {
-      A: toPct("A"),
-      B: toPct("B"),
-      C: toPct("C"),
-    };
+    return { A: toPct("A"), B: toPct("B"), C: toPct("C") };
   }, [schedule]);
 
   return (
@@ -210,10 +188,10 @@ export default function PlanningPage() {
       <div className="max-w-6xl mx-auto px-6 py-6">
         {/* AI Draft Status */}
         {aiDraftVisible && (
-          <div className="mb-6 rounded-lg border border-ai/20 bg-gradient-to-r from-ai/10 to-primary/10 p-4">
+          <div className="mb-6 rounded-lg border border-purple-200/60 bg-purple-50 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-lg bg-ai">
+                <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600">
                   <span className="text-sm text-white">🤖</span>
                 </div>
                 <div>
@@ -226,13 +204,13 @@ export default function PlanningPage() {
               <div className="flex space-x-2">
                 <button
                   onClick={onApproveDraft}
-                  className="rounded-lg bg-success px-4 py-2 text-sm text-white hover:bg-green-700"
+                  className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700"
                 >
                   ✅ Approve
                 </button>
                 <button
                   onClick={onRejectDraft}
-                  className="rounded-lg bg-danger px-4 py-2 text-sm text-white hover:bg-red-700"
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
                 >
                   ❌ Reject
                 </button>
@@ -242,7 +220,7 @@ export default function PlanningPage() {
         )}
 
         {/* KPI Overview */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {kpis.map((kpi, i) => (
             <Card
               key={i}
@@ -250,10 +228,9 @@ export default function PlanningPage() {
               title={kpi.label}
               value={kpi.value}
               subtitle={kpi.sub}
-              accent={kpi.color === "ai" ? "primary" : kpi.color}
+              accent={kpi.color}
             />
           ))}
-
         </div>
 
         {/* Pending Orders & Drag & Drop Schedule */}
@@ -272,7 +249,7 @@ export default function PlanningPage() {
                     onDragEnd={handleDragEnd}
                     className={`cursor-move rounded-lg border p-3 ${
                       isHigh
-                        ? "border-warning/20 bg-warning/5"
+                        ? "border-yellow-400/30 bg-yellow-50"
                         : "border-gray-200 bg-gray-50"
                     }`}
                   >
@@ -284,7 +261,7 @@ export default function PlanningPage() {
                         </div>
                         <div
                           className={`text-xs ${
-                            isHigh ? "text-warning" : "text-gray-500"
+                            isHigh ? "text-yellow-600" : "text-gray-500"
                           }`}
                         >
                           Due: {new Date(o.due).toLocaleDateString()}
@@ -311,7 +288,7 @@ export default function PlanningPage() {
                 Drag &amp; Drop Production Schedule
               </h3>
               <div className="flex space-x-2">
-                <button className="rounded bg-primary px-3 py-1 text-xs text-white">Today</button>
+                <button className="rounded bg-blue-600 px-3 py-1 text-xs text-white">Today</button>
                 <button className="rounded bg-gray-200 px-3 py-1 text-xs text-gray-700 hover:bg-gray-300">
                   Week
                 </button>
@@ -332,9 +309,9 @@ export default function PlanningPage() {
               <div className="rounded-lg border border-gray-200 p-4">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="h-3 w-3 rounded-full bg-success"></div>
+                    <div className="h-3 w-3 rounded-full bg-green-600"></div>
                     <h4 className="font-semibold text-gray-900">Line A - Injection Molding</h4>
-                    <span className="rounded-full bg-success/10 px-2 py-1 text-xs text-success">
+                    <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-700">
                       Running
                     </span>
                   </div>
@@ -342,15 +319,18 @@ export default function PlanningPage() {
                     Capacity: 150 pcs/hr • Compatible: A, F, G, B
                   </div>
                 </div>
-                <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+
+                {/* แนวนอน + ความกว้างเท่ากันทุกช่อง */}
+                <div className="flex space-x-3 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
                   {schedule.A.map((s) => (
-                    <DropSlot
-                      key={s.id}
-                      line="A"
-                      slot={s}
-                      onDragOver={handleDragOver}
-                      onDrop={handleDrop}
-                    />
+                    <div key={s.id} className="w-[260px] flex-none">
+                      <DropSlot
+                        line="A"
+                        slot={s}
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -359,9 +339,9 @@ export default function PlanningPage() {
               <div className="rounded-lg border border-gray-200 p-4">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="h-3 w-3 rounded-full bg-warning"></div>
+                    <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
                     <h4 className="font-semibold text-gray-900">Line B - Assembly</h4>
-                    <span className="rounded-full bg-warning/10 px-2 py-1 text-xs text-warning">
+                    <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs text-yellow-700">
                       Low Efficiency
                     </span>
                   </div>
@@ -369,15 +349,17 @@ export default function PlanningPage() {
                     Capacity: 120 pcs/hr • Compatible: F, B, H
                   </div>
                 </div>
-                <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+
+                <div className="flex space-x-3 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
                   {schedule.B.map((s) => (
-                    <DropSlot
-                      key={s.id}
-                      line="B"
-                      slot={s}
-                      onDragOver={handleDragOver}
-                      onDrop={handleDrop}
-                    />
+                    <div key={s.id} className="w-[260px] flex-none">
+                      <DropSlot
+                        line="B"
+                        slot={s}
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -386,9 +368,9 @@ export default function PlanningPage() {
               <div className="rounded-lg border border-gray-200 p-4">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="h-3 w-3 rounded-full bg-danger"></div>
+                    <div className="h-3 w-3 rounded-full bg-red-600"></div>
                     <h4 className="font-semibold text-gray-900">Line C - Packaging</h4>
-                    <span className="rounded-full bg-danger/10 px-2 py-1 text-xs text-danger">
+                    <span className="rounded-full bg-red-100 px-2 py-1 text-xs text-red-700">
                       Stopped
                     </span>
                   </div>
@@ -396,15 +378,17 @@ export default function PlanningPage() {
                     Capacity: 200 pcs/hr • Compatible: A, H
                   </div>
                 </div>
-                <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+
+                <div className="flex space-x-3 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
                   {schedule.C.map((s) => (
-                    <DropSlot
-                      key={s.id}
-                      line="C"
-                      slot={s}
-                      onDragOver={handleDragOver}
-                      onDrop={handleDrop}
-                    />
+                    <div key={s.id} className="w-[260px] flex-none">
+                      <DropSlot
+                        line="C"
+                        slot={s}
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -440,7 +424,7 @@ export default function PlanningPage() {
                 color={utilization.C === 0 ? "danger" : "warning"}
               />
 
-              <button className="flex w-full items-center justify-center rounded-lg bg-ai px-4 py-2 bg-purple-600 text-white hover:bg-purple-700">
+              <button className="flex w-full items-center justify-center rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700">
                 <span className="mr-2">🤖</span>
                 Optimize Capacity Allocation
               </button>
@@ -472,7 +456,7 @@ export default function PlanningPage() {
                 status="Shortage"
                 color="danger"
               />
-              <button className="w-full rounded-lg bg-warning px-4 py-2 text-white hover:bg-yellow-600">
+              <button className="w-full rounded-lg bg-yellow-500 px-4 py-2 text-white hover:bg-yellow-600">
                 Generate Purchase Orders
               </button>
             </div>
@@ -480,9 +464,9 @@ export default function PlanningPage() {
         </div>
 
         {/* AI Optimization Suggestions */}
-        <div className="rounded-lg border border-ai/20 bg-gradient-to-r from-ai/10 to-primary/10 p-6">
+        <div className="rounded-lg border border-purple-200/60 bg-purple-50 p-6">
           <div className="mb-4 flex items-center">
-            <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-lg bg-ai">
+            <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-lg bg-purple-600">
               <span className="text-xl text-white">🤖</span>
             </div>
             <h3 className="text-lg font-semibold text-gray-900">AI Optimization Suggestions</h3>
