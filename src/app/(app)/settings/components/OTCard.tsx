@@ -37,7 +37,7 @@ const OTCard: React.FC<Props> = ({
   return (
     <section
       id="ot"
-      className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4 mt-4"
+      className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4"
     >
       <h2 className="text-lg font-semibold mb-2">OT Rules / Setup Time / Buffer</h2>
 

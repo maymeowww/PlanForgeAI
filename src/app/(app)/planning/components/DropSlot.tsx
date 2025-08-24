@@ -18,8 +18,10 @@ export default function DropSlot({
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
   onDrop: (line: Line, slotId: string) => void;
 }) {
+  // ให้ขนาดกล่องเท่ากันเสมอ
   const base =
-    "min-h-[80px] rounded-lg p-4 flex items-center justify-center text-gray-500 border-2 border-dashed transition-colors";
+    "h-[120px] w-full rounded-lg p-4 flex items-center justify-center text-gray-500 border-2 border-dashed transition-colors";
+
   if (slot.kind === "maintenance") {
     const isA = line === "A" && slot.id === "A-maint";
     const styles = isA
@@ -36,6 +38,7 @@ export default function DropSlot({
       </div>
     );
   }
+
   if (slot.kind === "info") {
     return (
       <div className={`${base} border-gray-300`}>

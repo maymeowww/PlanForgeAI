@@ -77,7 +77,7 @@ const ShiftBreakCard: React.FC<Props> = ({
   );
 
   return (
-    <section className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4 mt-4">
+    <section className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4">
       <h2 className="text-lg font-semibold mb-2">Shifts & Breaks</h2>
       <p className="text-xs text-slate-500 mb-4">นิยามกะทำงานและช่วงพัก</p>
 

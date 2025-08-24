@@ -1,11 +1,11 @@
 "use client";
 
 import ImportButton from "@/src/components/shared/button/ImportButton";
-import ProductEditor from "@/src/components/ProductEditor";
 import Card from "@/src/components/shared/card/Card";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 
+/* ---------- small UI helpers ---------- */
 function StatusBadge({
   color = "gray",
   children,
@@ -38,11 +38,10 @@ function ProgressBar({ value }: { value: number }) {
   );
 }
 
-/* ---------- หน้า Production ---------- */
+/* ===================== Production Page ===================== */
 export default function ProductionPage() {
-  const [hasShadow, setHasShadow] = useState(false); // เงา header เมื่อสกอลล์
+  const [hasShadow, setHasShadow] = useState(false);
 
-  // header shadow on scroll
   useEffect(() => {
     const onScroll = () => setHasShadow(window.scrollY > 4);
     onScroll();
@@ -50,7 +49,6 @@ export default function ProductionPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // ตัวอย่าง Work Orders
   const workOrders = [
     { id: "WO-2024-021", product: "Product A", qty: 1200, done: 750, line: "Line A", status: "Running" as const },
     { id: "WO-2024-022", product: "Product B", qty: 800, done: 320, line: "Line B", status: "Low Efficiency" as const },
@@ -58,7 +56,6 @@ export default function ProductionPage() {
     { id: "WO-2024-024", product: "Product F", qty: 600, done: 0, line: "Line A", status: "Queued" as const },
   ];
 
-  // ตัวอย่างสรุปแต่ละไลน์
   const lines = [
     { name: "Line A - Injection", rate: 92, oee: 85, down: 5 },
     { name: "Line B - Assembly", rate: 68, oee: 72, down: 18 },
@@ -66,77 +63,46 @@ export default function ProductionPage() {
   ];
 
   const cardData = [
-    {
-      icon: "⚡",
-      title: "Production Rate",
-      value: "135",
-      subtitle: "pcs/hour (+8%)"
-    },
-    {
-      icon: "❌",
-      title: "NG Rate",
-      value: "3.2%",
-      subtitle: "+0.5% from yesterday"
-    },
-    {
-      icon: "⏱️",
-      title: "Downtime",
-      value: "45",
-      subtitle: "minutes today"
-    },
-    {
-      icon: "🎯",
-      title: "Target Achievement",
-      value: "92%",
-      subtitle: "1104/1200 pcs"
-    }
+    { icon: "⚡", title: "Production Rate", value: "135", subtitle: "pcs/hour (+8%)" },
+    { icon: "❌", title: "NG Rate", value: "3.2%", subtitle: "+0.5% from yesterday" },
+    { icon: "⏱️", title: "Downtime", value: "45", subtitle: "minutes today" },
+    { icon: "🎯", title: "Target Achievement", value: "92%", subtitle: "1104/1200 pcs" },
   ];
-
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
-    <header
-      className={clsx(
-        "sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 py-2",
-        hasShadow ? "shadow-sm" : "shadow-none"
-      )}
-    >
-      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 px-6 py-2 pb-1 min-w-0">
-        <h1 className="text-xl md:text-2xl font-bold leading-tight truncate">
-          Production
-        </h1>
-      
-      </div>
+      {/* ====== Header (buttons in one line, no horizontal scroll) ====== */}
+      <header
+        className={clsx(
+          "sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 py-2",
+          hasShadow ? "shadow-sm" : "shadow-none"
+        )}
+      >
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 px-6 py-2">
+          <h1 className="text-xl md:text-2xl font-bold leading-tight truncate">Production</h1>
 
-    <div className="max-w-6xl mx-auto px-6 pb-3 overflow-x-auto">
-      <div className="flex items-center gap-3">
-        <div className="flex gap-3">
-          <button className="inline-flex items-center rounded-lg bg-purple-600 px-5 py-2 text-white hover:opacity-90 transition">
-            AI Generate Plan
-          </button>
-          <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-white hover:opacity-90 transition">
-            + New Plan
-          </button>
-          <button className="inline-flex items-center rounded-lg bg-green-600 px-5 py-2 text-white hover:opacity-90 transition">
-            Save Plan
-          </button>
+          <div className="flex items-center gap-3 whitespace-nowrap">
+            <button className="inline-flex items-center rounded-lg bg-purple-600 px-5 py-2 text-white hover:opacity-90 transition">
+              AI Generate Plan
+            </button>
+            <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-white hover:opacity-90 transition">
+              + New Plan
+            </button>
+            <button className="inline-flex items-center rounded-lg bg-green-600 px-5 py-2 text-white hover:opacity-90 transition">
+              Save Plan
+            </button>
+
+            <ImportButton
+              label="Import CSV/Excel"
+              onFilesSelected={(files) => {
+                console.log("production import:", files[0]?.name);
+              }}
+            />
+          </div>
         </div>
+      </header>
 
-        <div className="ml-auto">
-          <ImportButton
-            label="Import CSV/Excel"
-            onFilesSelected={(files) => {
-              // TODO: parse ไฟล์แล้ว map ใส่ orders / lanes
-              console.log("planning import:", files[0]?.name);
-            }}
-          />
-        </div>
-      </div>
-    </div>
-
-    </header>
-
-
+      {/* ====== Body ====== */}
       <div className="max-w-6xl mx-auto px-6 py-6">
         {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -151,7 +117,7 @@ export default function ProductionPage() {
           ))}
         </div>
 
-        {/* สองคอลัมน์หลัก */}
+        {/* Main two columns */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* LEFT: Work Orders */}
           <section className="lg:col-span-7">
@@ -181,17 +147,31 @@ export default function ProductionPage() {
                           <td className="px-4 py-2 text-gray-700">{w.product}</td>
                           <td className="px-4 py-2">
                             <div className="flex items-center justify-end gap-2">
-                              <span className="text-gray-700 tabular-nums">{w.done}/{w.qty}</span>
-                              <div className="w-28"><ProgressBar value={pct} /></div>
-                              <span className="w-10 text-right tabular-nums text-gray-500">{pct}%</span>
+                              <span className="text-gray-700 tabular-nums">
+                                {w.done}/{w.qty}
+                              </span>
+                              <div className="w-28">
+                                <ProgressBar value={pct} />
+                              </div>
+                              <span className="w-10 text-right tabular-nums text-gray-500">
+                                {pct}%
+                              </span>
                             </div>
                           </td>
                           <td className="px-4 py-2 text-gray-700">{w.line}</td>
                           <td className="px-4 py-2">
-                            {w.status === "Running" && <StatusBadge color="emerald">Running</StatusBadge>}
-                            {w.status === "Low Efficiency" && <StatusBadge color="amber">Low Efficiency</StatusBadge>}
-                            {w.status === "Stopped" && <StatusBadge color="rose">Stopped</StatusBadge>}
-                            {w.status === "Queued" && <StatusBadge color="sky">Queued</StatusBadge>}
+                            {w.status === "Running" && (
+                              <StatusBadge color="emerald">Running</StatusBadge>
+                            )}
+                            {w.status === "Low Efficiency" && (
+                              <StatusBadge color="amber">Low Efficiency</StatusBadge>
+                            )}
+                            {w.status === "Stopped" && (
+                              <StatusBadge color="rose">Stopped</StatusBadge>
+                            )}
+                            {w.status === "Queued" && (
+                              <StatusBadge color="sky">Queued</StatusBadge>
+                            )}
                           </td>
                         </tr>
                       );
@@ -238,12 +218,11 @@ export default function ProductionPage() {
                   </div>
                 ))}
               </div>
-
             </div>
           </section>
         </div>
 
-        {/* Bottom Actions (optional) */}
+        {/* Bottom actions */}
         <div className="rounded-xl border bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-600">
@@ -259,8 +238,6 @@ export default function ProductionPage() {
             </div>
           </div>
         </div>
-
-        {/* <ProductEditor/> */}
       </div>
     </div>
   );

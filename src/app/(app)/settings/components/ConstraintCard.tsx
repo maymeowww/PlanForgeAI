@@ -23,7 +23,7 @@ const ConstraintCard: React.FC<Props> = ({
   return (
     <section
       id="constraints"
-      className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4 mt-4"
+      className="scroll-mt-24 bg-white border rounded-2xl shadow-sm p-4"
     >
       <h2 className="text-lg font-semibold mb-4">
         Constraints (Maintenance, Material Ready)

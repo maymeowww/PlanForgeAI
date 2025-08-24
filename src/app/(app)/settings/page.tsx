@@ -1,13 +1,10 @@
+// src/app/settings/page.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  Pencil,            // Edit
-  Check,             // Save
-  X,                 // Cancel
-  Download,          // Export JSON (optional)
-} from "lucide-react";
+import { Pencil, Check, X } from "lucide-react";
 import clsx from "clsx";
+
 import IconButton from "@/src/components/shared/button/IconButton";
 import HolidayCard from "./components/HolidayCard";
 import ShiftBreakCard from "./components/ShiftBreakCard";
@@ -24,34 +21,16 @@ type SetupRule = { from: string; to: string; setup_min: number };
 type Constraints = { enforce_maintenance: boolean; enforce_material_ready: boolean; material_ready_offset_min: number; freeze_window_min: number };
 type MaintWin = { machine_id: string; start_dt: string; end_dt: string; type: "PM" | "Unplanned"; note: string };
 
-type SettingsPayload = {
-  calendar: { holidays: Holiday[] };
-  shifts: { shifts: Shift[]; breaks: BreakRow[] };
-  ot_rules: OTRules;
-  setup_matrix: SetupRule[];
-  constraints: Constraints;
-  maintenance_windows: MaintWin[];
-};
-
-/* ---------- Helpers ---------- */
 const toBool = (v: any) => String(v) === "true";
 
-function downloadJSON(filename: string, data: unknown) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* ========================================= */
 export default function ProjectSettings() {
   const [isEditing, setIsEditing] = useState(false);
-  const [hasShadow, setHasShadow] = useState(false); // เงา header เมื่อสกอลล์
+  const [hasShadow, setHasShadow] = useState(false);
+  const [active, setActive] = useState<
+    "cal" | "shifts" | "ot" | "constraints" | "maint"
+  >("cal");
 
-  // header shadow on scroll
+  // header shadow
   useEffect(() => {
     const onScroll = () => setHasShadow(window.scrollY > 4);
     onScroll();
@@ -59,7 +38,7 @@ export default function ProjectSettings() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // seed states
+  // seed state
   const [holidays, setHolidays] = useState<Holiday[]>([
     { start_date: "2025-12-31", end_date: "2026-01-01", description: "New Year's Day", is_recurring: true },
     { start_date: "2025-04-13", end_date: "2025-04-15", description: "Songkran Festival", is_recurring: true },
@@ -72,75 +51,47 @@ export default function ProjectSettings() {
     { shift_code: "A", start: "12:00", end: "13:00" },
     { shift_code: "B", start: "00:00", end: "00:30" },
   ]);
-  const [otRules, setOTRules] = useState<OTRules>({ daily_cap_hours: 2, allow_weekend_ot: true, default_setup_min: 10, default_buffer_min: 30 });
+  const [otRules, setOTRules] = useState<OTRules>({
+    daily_cap_hours: 2,
+    allow_weekend_ot: true,
+    default_setup_min: 10,
+    default_buffer_min: 30,
+  });
   const [setupMatrix, setSetupMatrix] = useState<SetupRule[]>([
     { from: "P1", to: "P2", setup_min: 12 },
     { from: "P2", to: "P3", setup_min: 18 },
   ]);
   const [constraints, setConstraints] = useState<Constraints>({
-    enforce_maintenance: true, enforce_material_ready: true, material_ready_offset_min: 0, freeze_window_min: 120,
+    enforce_maintenance: true,
+    enforce_material_ready: true,
+    material_ready_offset_min: 0,
+    freeze_window_min: 120,
   });
   const [maint, setMaint] = useState<MaintWin[]>([
     { machine_id: "M2", start_dt: "2025-08-20T13:00", end_dt: "2025-08-20T15:00", type: "PM", note: "quarterly" },
     { machine_id: "M1", start_dt: "2025-08-22T09:00", end_dt: "2025-08-22T10:00", type: "Unplanned", note: "vibration" },
   ]);
 
-  const payload: SettingsPayload = useMemo(
-    () => ({
-      calendar: { holidays },
-      shifts: { shifts, breaks },
-      ot_rules: otRules,
-      setup_matrix: setupMatrix,
-      constraints,
-      maintenance_windows: maint,
-    }),
-    [holidays, shifts, breaks, otRules, setupMatrix, constraints, maint]
-  );
-
-  function validateForm(): boolean {
-    const errs: string[] = [];
-    holidays.forEach((h, i) => {
-      if (!h.start_date) errs.push(`Holiday row ${i + 1}: start date is empty`);
-      if (!h.is_recurring && h.start_date && h.end_date && new Date(h.start_date) > new Date(h.end_date)) {
-        errs.push(`Holiday row ${i + 1}: end < start`);
-      }
-    });
-    shifts.forEach((s, i) => {
-      if (!s.code) errs.push(`Shift row ${i + 1}: code is empty`);
-      if (s.start && s.end && s.start >= s.end) errs.push(`Shift ${s.code || "#" + (i + 1)}: start >= end`);
-    });
-    breaks.forEach((b, i) => {
-      if (!b.shift_code) errs.push(`Break row ${i + 1}: shift code is empty`);
-      if (b.start && b.end && b.start >= b.end) errs.push(`Break row ${i + 1}: start >= end`);
-    });
-    maint.forEach((m, i) => {
-      if (!m.machine_id) errs.push(`Maintenance row ${i + 1}: machine id is empty`);
-      if (m.start_dt && m.end_dt && m.start_dt >= m.end_dt) errs.push(`Maintenance row ${i + 1}: start >= end`);
-    });
-    if (errs.length) {
-      alert("พบปัญหา:\n- " + errs.join("\n- "));
-      return false;
-    }
-    return true;
-  }
-
-  function handleSave() {
-    if (!validateForm()) return;
-    setIsEditing(false);
-    downloadJSON("project_settings.json", payload);
-  }
-
-  function handleCancel() {
-    setIsEditing(false);
-    // ถ้าต้องการ revert ค่ากลับ ให้เก็บ snapshot state ตอนกด Edit แล้ว set กลับที่นี่
-  }
-
-  const cell = "p-2 align-top";
   const th = "p-2 text-left text-xs font-semibold text-slate-500";
-  const iconBtn = "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition shadow-sm";
+  const cell = "p-2 align-top";
+
+  const sections = [
+    { id: "cal" as const, label: "Calendar / Holidays", node: <HolidayCard holidays={holidays} setHolidays={setHolidays} isEditing={isEditing} /> },
+    { id: "shifts" as const, label: "Shifts & Breaks", node: <ShiftBreakCard shifts={shifts} setShifts={setShifts} breaks={breaks} setBreaks={setBreaks} isEditing={isEditing} /> },
+    { id: "ot" as const, label: "OT / Setup / Buffer", node: <OTCard otRules={otRules} setOTRules={setOTRules} setupMatrix={setupMatrix} setSetupMatrix={setSetupMatrix} isEditing={isEditing} toBool={toBool} /> },
+    { id: "constraints" as const, label: "Constraints", node: <ConstraintCard constraints={constraints} setConstraints={setConstraints} isEditing={isEditing} toBool={toBool} /> },
+    { id: "maint" as const, label: "Maintenance", node: <MaintenanceCard maint={maint} setMaint={setMaint} isEditing={isEditing} th={th} cell={cell} /> },
+  ];
+
+  const ordered = useMemo(() => {
+    const first = sections.find((s) => s.id === active)!;
+    const rest = sections.filter((s) => s.id !== active);
+    return [first, ...rest];
+  }, [active, sections]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
+      {/* Header */}
       <header
         className={clsx(
           "py-2 sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70",
@@ -154,93 +105,55 @@ export default function ProjectSettings() {
               กำหนดกะทำงาน, วันหยุด, OT/Setup/Buffer, ข้อจำกัด และบำรุงรักษา
             </p>
           </div>
-
-          {/* Action Icons */}
           <div className="flex items-center gap-2">
-            {!isEditing ? (              
+            {!isEditing ? (
               <IconButton tooltip="Edit" onClick={() => setIsEditing(true)}>
-                <Pencil className="h-4 w-4"/>
+                <Pencil className="h-4 w-4" />
               </IconButton>
             ) : (
               <>
-                <IconButton tooltip="Save" onClick={handleSave} variant='ok'>                  
+                <IconButton tooltip="Save" onClick={() => setIsEditing(false)} variant="ok">
                   <Check className="h-4 w-4" />
-                </IconButton>        
-                
-                <IconButton tooltip="Cancel" onClick={handleCancel}>                  
+                </IconButton>
+                <IconButton tooltip="Cancel" onClick={() => setIsEditing(false)}>
                   <X className="h-4 w-4" />
-                </IconButton>        
+                </IconButton>
               </>
             )}
           </div>
         </div>
 
-        {/* ======= Top Menu ======= */}
+        {/* Top Menu */}
         <nav className="max-w-6xl mx-auto px-3 md:px-6 pb-2 overflow-x-auto">
           <ul className="flex items-center gap-1 text-[13px]">
-            {[
-              { href: "#cal", label: "Calendar / Holidays" },
-              { href: "#shifts", label: "Shifts & Breaks" },
-              { href: "#ot", label: "OT / Setup / Buffer" },
-              { href: "#constraints", label: "Constraints" },
-              { href: "#maint", label: "Maintenance" },
-            ].map((it) => (
-              <li key={it.href}>
-                <a
-                  href={it.href}
-                  className="inline-flex whitespace-nowrap items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:bg-slate-100"
-                >
-                  {it.label}
-                </a>
-              </li>
-            ))}
+            {sections.map((it) => {
+              const isActive = active === it.id;
+              return (
+                <li key={it.id}>
+                  <button
+                    type="button"
+                    onClick={() => setActive(it.id)}
+                    className={clsx(
+                      "inline-flex whitespace-nowrap items-center rounded-lg border px-3 py-1.5",
+                      isActive
+                        ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                    )}
+                  >
+                    {it.label}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </header>
 
-      {/* ======= Content ======= */}
-      <div className="max-w-6xl mx-auto px-6 py-6">
-
-        <HolidayCard
-          holidays={holidays}
-          setHolidays={setHolidays}
-          isEditing={isEditing}
-        />
-
-        <ShiftBreakCard
-          shifts={shifts}
-          setShifts={setShifts}
-          breaks={breaks}
-          setBreaks={setBreaks}
-          isEditing={isEditing}
-        />
-
-        {/* OT / Setup / Buffer */}
-        <OTCard
-          otRules={otRules}
-          setOTRules={setOTRules}
-          setupMatrix={setupMatrix}
-          setSetupMatrix={setSetupMatrix}
-          isEditing={isEditing}
-          toBool={toBool}
-        />
-
-        {/* Constraints */}
-        <ConstraintCard
-          constraints={constraints}
-          setConstraints={setConstraints}
-          isEditing={isEditing}
-          toBool={toBool}
-        />
-
-        {/* Maintenance Windows */}
-        <MaintenanceCard
-          maint={maint}
-          setMaint={setMaint}
-          isEditing={isEditing}
-          th={th}
-          cell={cell}
-        />
+      {/* Content */}
+      <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
+        {ordered.map((sec) => (
+          <div key={sec.id}>{sec.node}</div>
+        ))}
       </div>
     </div>
   );
