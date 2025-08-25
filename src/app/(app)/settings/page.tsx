@@ -175,7 +175,6 @@ export default function ProjectSettings() {
         actions={
           <div className="flex items-center gap-2">
             {!isEditing ? (
-            {!isEditing ? (
               <IconButton tooltip="Edit" onClick={() => setIsEditing(true)}>
                 <Pencil className="h-4 w-4" />
                 <Pencil className="h-4 w-4" />
@@ -188,7 +187,6 @@ export default function ProjectSettings() {
 
                 <IconButton tooltip="Cancel" onClick={handleCancel}>
                   <X className="h-4 w-4" />
-                </IconButton>
                 </IconButton>
               </>
             )}

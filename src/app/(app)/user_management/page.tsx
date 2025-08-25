@@ -18,12 +18,8 @@ import UserTable from "./components/UserTable";
 import Table from "@/src/components/shared/Table";
 import SearchInput from "@/src/components/shared/input/SearchInput";
 import PageHeader from "@/src/components/layout/PageHeader";
-
-const groups: Group[] = [
-  { group_id: 1, group_name: "Admin" },
-  { group_id: 2, group_name: "Staff" },
-  { group_id: 3, group_name: "Guest" },
-];
+import CommonTable from "@/src/components/shared/Table";
+import { StatusBadge } from "@/src/components/shared/StatusBadge";
 
 function nextId<T extends Record<string, any>>(arr: T[], key: keyof T) {
   const max = arr.reduce((m, x) => Math.max(m, Number(x[key] ?? 0)), 0);
@@ -40,7 +36,7 @@ export default function UserManagementPage() {
   type ViewMode = typeof segmentOptions[number]["value"];
   
   const statusOptions = [
-    { label: "ทุกสถานะ", value: "" },
+    { label: "All Status", value: "" },
     { label: "Active", value: "true" },
     { label: "Inactive", value: "false" },
   ];
@@ -81,50 +77,57 @@ export default function UserManagementPage() {
     });
   }, [users, q, filterGroup, filterActive]);
 
-  const pageSize = 10;
-const [pageUsers, setPageUsers] = useState(1);
+  const [pageUsers, setPageUsers] = useState(1);
+  const [pageSizeUsers, setPageSizeUsers] = useState(10);
 
-const pagedUsers = useMemo(() => {
-  const start = (pageUsers - 1) * pageSize;
-  return filteredUsers.slice(start, start + pageSize);
-}, [filteredUsers, pageUsers]);
+  const pagedUsers = useMemo(() => {
+    const start = (pageUsers - 1) * pageSizeUsers;
+    return filteredUsers.slice(start, start + pageSizeUsers);
+  }, [filteredUsers, pageUsers, pageSizeUsers]);
 
-const userColumns = [
-  {
-    key: "employee_code",
-    label: "รหัสพนักงาน",
-  },
-  {
-    key: "username",
-    label: "Username",
-  },
-  {
-    key: "full_name",
-    label: "ชื่อ-นามสกุล",
-  },
-  {
-    key: "email",
-    label: "Email",
-  },
-  {
-    key: "department",
-    label: "แผนก",
-  },
-  {
-    key: "is_active",
-    label: "สถานะ",
-    render: (u: User) => (
-      <span
-        className={clsx(
-          "inline-block px-2 py-0.5 rounded-full text-xs font-medium",
-          u.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-        )}
-      >
-        {u.is_active ? "Active" : "Inactive"}
-      </span>
-    ),
-  },
-];
+  type User = {
+    employee_code: string;
+    username: string;
+    full_name: string;
+    email: string;
+    department: string;
+    is_active: boolean;
+  };
+
+  const userColumns = [
+    {
+      key: "employee_code",
+      header: "รหัสพนักงาน",
+    },
+    {
+      key: "username",
+      header: "Username",
+    },
+    {
+      key: "full_name",
+      header: "ชื่อ-นามสกุล",
+    },
+    {
+      key: "email",
+      header: "Email",
+    },
+    {
+      key: "department",
+      header: "แผนก",
+    },
+    {
+      key: "is_active",
+      header: "สถานะ",
+      render: (u: User) => {
+        const isActive = u.is_active;
+        const statusText = isActive ? "active" : "inactive";
+
+        return (
+          <StatusBadge type="order" status={statusText}/>        
+        );
+      },
+    },
+  ];
 
   function openNewUser() {
     setEditing(null);
@@ -318,14 +321,12 @@ const userColumns = [
                 value={filterGroup}
                 onChange={setFilterGroup}
                 options={groupOptions}
-                placeholder="All Groups"
                 className="h-10"
               />
               <Dropdown
                 value={filterActive}
                 onChange={setFilterActive}
                 options={statusOptions}
-                placeholder="All Status"
                 className="h-10"
               />
               <div className="ml-auto">
@@ -336,17 +337,17 @@ const userColumns = [
             </div>
 
             {/* table */}      
-            <Table
-              columns={userColumns}
+            <CommonTable<User>
+              columns={userColumns as any}
               data={pagedUsers}
-              currentPage={pageUsers}
-              pageSize={pageSize}
-              totalItems={filteredUsers.length}
-              onPageChange={setPageUsers}
-              openOrderModal={(id) => openEditUser(users.find((u) => u.user_id === id)!)}
-              delOrder={(id) =>
-                setUsers((prev) => prev.filter((u) => u.user_id !== id))
-              }
+              pagination={{
+                total: filteredUsers.length,
+                page: pageUsers,
+                pageSize: pageSizeUsers,
+                onPageChange: setPageUsers,
+                onPageSizeChange: setPageSizeUsers,
+                pageSizes: [10, 20, 50],
+              }}
             />
           </section>
         )}

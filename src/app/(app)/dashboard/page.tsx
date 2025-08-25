@@ -1,209 +1,123 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import Card from "@/src/components/shared/card/Card";
-import clsx from "clsx";
-import MachineStatusCard from "./components/MachineStatus";
+"use client"
 import PageHeader from "@/src/components/layout/PageHeader";
+import React, { useEffect, useMemo, useState } from "react";
+import GanttSection from "./components/Gantt";
+import KPISnapshot from "./components/KPISnapshot";
+import AlertsList from "./components/AlertsList";
+import MachineStatus from "./components/MachineStatus";
+import { cls } from "@/src/lib/utils";
+import MaterialCard from "./components/MaterialCard";
 
-// ProgressRing component for SVG progress ring
-function ProgressRing({
-  radius,
-  stroke,
-  progress,
-  color,
-  trackColor = "#e5e7eb",
-}: {
-  radius: number;
-  stroke: number;
-  progress: number;
-  color: string;
-  trackColor?: string;
-}) {
-  const normalizedRadius = radius - stroke / 2;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+type OverviewCardProps = {
+  title?: string;
+  value?: string;
+  sub?: string;
+  badge?: {
+    text?: string;
+    tone: "emerald" | "blue" | "amber" | "rose";
+  };
+};
+
+function OverviewCard({ title, value, sub, badge }: OverviewCardProps) {
+  const toneMap = {
+    emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+    blue: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+    amber: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+    rose: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+  } as const;
 
   return (
-    <svg height={radius * 2} width={radius * 2} className="progress-ring">
-      <circle
-        stroke={trackColor}
-        fill="transparent"
-        strokeWidth={stroke}
-        r={normalizedRadius}
-        cx={radius}
-        cy={radius}
-      />
-      <circle
-        className="progress-ring-circle transition-all duration-500"
-        stroke={color}
-        fill="transparent"
-        strokeWidth={stroke}
-        strokeDasharray={`${circumference} ${circumference}`}
-        strokeDashoffset={strokeDashoffset}
-        strokeLinecap="round"
-        r={normalizedRadius}
-        cx={radius}
-        cy={radius}
-      />
-    </svg>
+    <div className="rounded-2xl bg-white dark:bg-slate-800 shadow p-4 h-full flex flex-col gap-y-4">
+  {/* Header */}
+  <div className="flex items-center justify-between">
+    <h3 className="text-sm text-slate-500 dark:text-slate-400">
+      {title ?? "-"}
+    </h3>
+    {badge?.text && badge.tone && (
+      <span
+        className={cls(
+          "text-xs px-2 py-0.5 rounded-full",
+          toneMap[badge.tone]
+        )}
+      >
+        {badge.text}
+      </span>
+    )}
+  </div>
+
+  {/* Value */}
+  <p
+    className={cls(
+      "font-bold leading-tight text-center",
+      "text-[clamp(1.75rem,4vw,2.5rem)]"
+    )}
+  >
+    {value ?? "-"}
+    {sub && (
+      <span className="ml-1 text-sm font-medium text-slate-400">
+        {sub}
+      </span>
+    )}
+  </p>
+    </div>
   );
 }
 
-// OverallOeeCard แก้ใหม่ตามที่คุณให้มา
-const OverallOeeCard = () => {
-  const percent = 75;
+function OverviewSection() {
   return (
-    <div className="lg:col-span-1 bg-white rounded-lg shadow-sm p-6 border border-gray-200 kpi-card">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Overall OEE</h3>
-        <div className="text-2xl">📊</div>
-      </div>
-      <div className="relative w-24 h-24 mx-auto mb-4">
-        <ProgressRing radius={48} stroke={8} progress={percent} color="#10b981" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl font-bold text-gray-900">{percent}%</span>
-        </div>
-      </div>
-      <div className="text-center">
-        <p className="text-sm text-gray-600">Target: 85%</p>
-        <p className="text-sm text-yellow-600">-10% from target</p>
-      </div>
-    </div>
-  );
-};
-
-// OeeComponentsCard แก้ใหม่ตามที่คุณให้มา
-const oeeComponentsData = [
-  {
-    title: "Availability",
-    percent: 80,
-    color: "#2563eb",
-    target: "Planned vs Actual",
-    difference: "480/600 min",
-    differenceColorClass: "text-blue-600", // ปรับสีตาม Tailwind
-  },
-  {
-    title: "Performance",
-    percent: 90,
-    color: "#f59e0b",
-    target: "Actual vs Ideal",
-    difference: "1080/1200 pcs",
-    differenceColorClass: "text-yellow-600",
-  },
-  {
-    title: "Quality",
-    percent: 97,
-    color: "#10b981",
-    target: "Good vs Total",
-    difference: "1048/1080 pcs",
-    differenceColorClass: "text-green-600",
-  },
-];
-
-const OeeComponentsCard = () => (
-  <div className="lg:col-span-3 bg-white rounded-lg shadow-sm p-6 border border-gray-200 kpi-card">
-    <h3 className="text-lg font-semibold text-gray-900 mb-4">OEE Components</h3>
-    <div className="grid grid-cols-3 gap-6">
-      {oeeComponentsData.map(({ title, percent, color, target, difference, differenceColorClass }) => (
-        <div key={title} className="text-center">
-          <div className="relative w-20 h-20 mx-auto mb-3">
-            <ProgressRing radius={40} stroke={6} progress={percent} color={color} />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-lg font-bold text-gray-900">{percent}%</span>
+    <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <OverviewCard title="Output (Today)" value="3,420" sub="pcs" badge={{ text: "+8% vs Plan", tone: "emerald" }} />
+      <OverviewCard title="Machine Utilization" value="83%" badge={{ text: "12 Machines", tone: "blue" }} />
+      <div className="rounded-2xl bg-white dark:bg-slate-800 shadow p-4">
+        <h3 className="text-sm text-slate-500 dark:text-slate-400">Orders Status</h3>
+        <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+          {[
+            { label: "กำลังผลิต", value: 18, tone: "" },
+            { label: "รอผลิต", value: 7, tone: "" },
+            { label: "ล่าช้า", value: 3, tone: "text-rose-500" },
+          ].map((x) => (
+            <div key={x.label} className="rounded-xl bg-slate-50 dark:bg-slate-700 p-3">
+              <div className="text-xs text-slate-500">{x.label}</div>
+              <div className={cls("text-lg font-semibold", x.tone)}>{x.value}</div>
             </div>
-          </div>
-          <h4 className="font-semibold text-gray-900">{title}</h4>
-          <p className="text-sm text-gray-600">{target}</p>
-          <p className={`text-sm ${differenceColorClass}`}>{difference}</p>
+          ))}
         </div>
-      ))}
-    </div>
-  </div>
-);
+      </div>
+      <div className="rounded-2xl bg-white dark:bg-slate-800 shadow p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm text-slate-500 dark:text-slate-400">OEE (Today)</h3>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">–2% vs Yesterday</span>
+        </div>
+        <p className="mt-2 text-2xl font-bold text-center">74%</p>
+        <dl className="mt-3 grid grid-cols-3 gap-2 text-center text-xs text-slate-500 dark:text-slate-400">
+          <div><dt>Avail.</dt><dd className="font-semibold text-slate-700 dark:text-slate-200">88%</dd></div>
+          <div><dt>Perf.</dt><dd className="font-semibold text-slate-700 dark:text-slate-200">84%</dd></div>
+          <div><dt>Qual.</dt><dd className="font-semibold text-slate-700 dark:text-slate-200">99%</dd></div>
+        </dl>
+      </div>
+    </section>
+  );
+}
 
-export default function DashboardPage() {
-  const machines = [
-    {
-      id: "1",
-      line: "Line A - Injection Molding",
-      description: "Running",
-      rate: "142 pcs/hr",
-      oee: "78%",
-      status: "success" as const,
-      statusText: "Normal",
-      extra: "Temp: 185°C",
-    },
-    {
-      id: "2",
-      line: "Line B - Assembly",
-      description: "Running",
-      rate: "98 pcs/hr",
-      oee: "65%",
-      status: "warning" as const,
-      statusText: "Warning",
-      extra: "Low efficiency",
-    },
-    {
-      id: "3",
-      line: "Line C - Packaging",
-      description: "Stopped",
-      rate: "0 pcs/hr",
-      oee: "0%",
-      status: "danger" as const,
-      statusText: "Alarm",
-      extra: "Jam detected",
-    },
-  ];
-
-  const [hasShadow, setHasShadow] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setHasShadow(window.scrollY > 4);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const cardData = [
-    { title: "NG Rate", value: "3.2%", subtitle: "+0.5% from yesterday", icon: "❌", accent: "danger" },
-    { title: "Production Rate", value: "135", subtitle: "pcs/hour (+8%)", icon: "⚡", accent: "success" },
-    { title: "Downtime", value: "45", subtitle: "minutes today", icon: "⏱️", accent: "warning" },
-    { title: "Target Achievement", value: "92%", subtitle: "1104/1200 pcs", icon: "🎯", accent: "primary" },
-  ];
-
+export default function AIPlannerDashboard() {
   return (
     <>
       <PageHeader title="Dashboard"/>
-
-      {/* Main Content */}
-      <main className="flex-1">
-        <div className="max-w-6xl mx-auto px-6 py-6 space-y-10">
-          {/* OEE Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <OverallOeeCard />
-            <OeeComponentsCard />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <OverviewSection />
+        <GanttSection/>
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <KPISnapshot />
+            <MachineStatus />
           </div>
-
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {cardData.map((card, index) => (
-              <Card
-                key={index}
-                icon={<span>{card.icon}</span>}
-                title={card.title}
-                value={card.value}
-                subtitle={card.subtitle}
-                accent={card.accent}
-              />
-            ))}
-          </div>
-
-          {/* Machine Status and Alarms */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <MachineStatusCard machines={machines} />
-          </div>
-        </div>
+          <aside className="space-y-6">
+            <AlertsList />
+            <MaterialCard />          
+          </aside>
+        </section>
+       
       </main>
     </>
   );

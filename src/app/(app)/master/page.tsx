@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Edit3, Trash2 } from "lucide-react";
+import { Plus, Edit3, Trash2, Eye } from "lucide-react";
 import ImportButton from "@/src/components/shared/button/ImportButton";
 import ExportButton from "@/src/components/shared/button/ExportButton";
 import IconButton from "@/src/components/shared/button/IconButton";
@@ -16,6 +16,8 @@ import MachineModal from "@/src/app/(app)/master/components/MachineModal";
 import PageHeader from "@/src/components/layout/PageHeader";
 import CommonTable from "@/src/components/shared/Table";
 import { StatusBadge } from "@/src/components/shared/StatusBadge";
+import OrderProductProgressModal from "./components/OrderProgressModal";
+import OrderProgressBarModal from "./components/OrderProgressModal";
 
 /** ========= Types ========= */
 type Order = {
@@ -99,6 +101,29 @@ const MasterDataPage: React.FC = () => {
     { label: "Completed", value: "completed" },
     { label: "Cancelled", value: "cancelled" },
   ];
+
+  const [orderProgressModalOpen, setOrderProgressModalOpen] = useState(false);
+
+  const order = {
+    id: "ORD-1234",
+    products: [
+      {
+        name: "Product A",
+        steps: ["Cutting", "Welding", "Painting", "QC", "Done"],
+        currentStep: 2,
+      },
+      {
+        name: "Product B",
+        steps: ["Cutting", "Welding", "Painting", "QC", "Done"],
+        currentStep: 4,
+      },
+      {
+        name: "Product C",
+        steps: ["Cutting", "Welding", "Painting", "QC", "Done"],
+        currentStep: 1,
+      },
+    ],
+  };
 
   /** ====== Products UI state ====== */
   const [prodQ, setProdQ] = useState("");
@@ -348,6 +373,9 @@ const MasterDataPage: React.FC = () => {
       className: "text-right",
       render: (o: Order) => (
         <div className="flex justify-end gap-2">
+          <IconButton buttonClassName="px-2 py-1"  onClick={() => setOrderProgressModalOpen(true)}>
+            <Eye size={16} />
+          </IconButton>
           <IconButton buttonClassName="px-2 py-1" onClick={() => openOrderModal(o.order_id ?? null)}>
             <Edit3 size={16} />
           </IconButton>
@@ -383,7 +411,7 @@ const MasterDataPage: React.FC = () => {
     { key: "product_number", header: "Code", render: (p: Product) => <b>{p.product_number}</b> },
     { key: "name", header: "Name" },
     { key: "category", header: "Category", render: (p: Product) => p.category || "-" },
-    { key: "std_rate_min", header: "Std (min)", render: (p: Product) => p.std_rate_min ?? "-" },
+    { key: "std_rate_min", header: "Std Rate (min)", render: (p: Product) => p.std_rate_min ?? "-" },
     { key: "unit_code", header: "Unit", render: (p: Product) => p.unit_code || "-" },
     { key: "description", header: "Description", render: (p: Product) => p.description || "-" },
   ] as const;
@@ -404,7 +432,6 @@ const MasterDataPage: React.FC = () => {
         </div>
       ),
     },
-    { key: "machine_id", header: "ID", className: "w-[120px]" },
     { key: "machine_code", header: "Code", render: (m: Machine) => <b>{m.machine_code}</b> },
     { key: "name", header: "Name", render: (m: Machine) => m.name || "-" },
     { key: "type", header: "Type", render: (m: Machine) => m.type || "-" },
@@ -550,6 +577,11 @@ const MasterDataPage: React.FC = () => {
         onClose={() => { setOrderModalOpen(false); setEditOrderId(null); }}
         order={selectedOrder || undefined}
         onSave={handleSaveOrder}
+      />
+      <OrderProgressBarModal
+        isOpen={orderProgressModalOpen}
+        onClose={() => setOrderProgressModalOpen(false)}
+        order={order}
       />
       <ProductModal
         isOpen={prodModalOpen}

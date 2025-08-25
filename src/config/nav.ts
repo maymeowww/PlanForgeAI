@@ -21,7 +21,7 @@ export const NAV: Group[] = [
     items: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { label: "Planning", href: "/planning", icon: CalendarCheck2 },
-      { label: "Production", href: "/production", icon: Presentation },
+      { label: "Material Planning", href: "/material", icon: Presentation },
       { label: "Master", href: "/master", icon: AppWindow },
       { label: "User Management", href: "/user_management", icon: UserRound },
       { label: "Settings", href: "/settings", icon: Settings2 },

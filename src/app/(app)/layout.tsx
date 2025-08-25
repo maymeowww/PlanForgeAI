@@ -32,15 +32,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <section
           className={[
             "flex-1 min-w-0 overflow-y-auto flex flex-col", // ✅ เปลี่ยนให้เป็น flex-col
-            "bg-white dark:bg-slate-950",
+            "bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100",
           ].join(" ")}
         >
           <div id="app-header-slot" />
 
           {/* ✅ เนื้อหาเพจจริง */}
-          <div className="flex-1">{children}</div>
+          <div className="flex-1">
+            {children}
+          </div>
 
-          {/* ✅ Footer */}
           <footer className="text-center text-sm text-slate-500 dark:text-slate-400 py-4">
             © 2025 PlanForge System · by ARiSE | v1.0.0
           </footer>

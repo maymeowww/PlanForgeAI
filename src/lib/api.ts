@@ -37,11 +37,10 @@
 // };
 
 
+// =========== Setting ===============
 
-// lib/api.ts
 import type { Holiday, Shift, BreakRow, OTRules, SetupRule, Constraints, MaintWin } from "@/src/types";
 
-// Mock Data
 const mockHolidays: Holiday[] = [
   { start_date: "2025-12-31", end_date: "2026-01-01", description: "New Year's Day", is_recurring: true },
   { start_date: "2025-04-13", end_date: "2025-04-15", description: "Songkran Festival", is_recurring: true },
